@@ -1,17 +1,20 @@
-# Bash script for installation of software used for bacterial genome assembly from short-read sequencing data
+# Bash script for installation of software used for bacterial genome assembly from short-read sequencing data and genome annotation
 #
 # ⚠️ DO NOT execute this script entirely at once!
 # Copy and paste individual command lines into the Linux terminal as needed.
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 30/09/2025
+# Date: 07/10/2025
 # More info: see README.md in the repository
 
 
 # Summary
 # A) System requirements
 # B) Software installation
+# B.1) Software installation - Miniconda
+# B.2) Software installation - Genome assembly
+# B.3) Software installation - Genome annotation
 # C) Connecting to a server and using Screen
 # D) Sending all results to another computer
 
@@ -26,6 +29,10 @@
 
 ##########################################################################
 ## B) Software installation
+##########################################################################
+
+##########################################################################
+## B.1) Software installation - Miniconda
 ##########################################################################
 
 ##########################################################################
@@ -147,6 +154,11 @@ sudo mkdir /db
 
 # IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
 
+
+##########################################################################
+## B.2) Software installation - Genome assembly
+##########################################################################
+
 ##########################################################################
 # barrnap (Evaluate the completeness of rRNA genes)
 conda create -n barrnap -c bioconda barrnap -y
@@ -267,6 +279,69 @@ conda create -n unicycler -c bioconda unicycler -y
 ##########################################################################
 # Zip (Compress and decompress directories and files)
 sudo apt-get install zip -y
+
+
+##########################################################################
+## B.3) Software installation - Genome annotation
+##########################################################################
+
+##########################################################################
+# COG classifier (Gene functional annotation)
+conda create -n cogclassifier -c bioconda -c conda-forge cogclassifier -y
+
+##########################################################################
+# CRISPRcasFinder local (CRISPR/Cas system prediction)
+cd /db
+git clone https://github.com/dcouvin/CRISPRCasFinder.git
+cd CRISPRCasFinder
+conda env create -f ccf.environment.yml -n crisprcasfinder
+conda activate crisprcasfinder
+mamba install -c bioconda macsyfinder=2.1.2 -y
+macsydata install -u CASFinder==3.1.0
+conda deactivate
+
+##########################################################################
+# EggNOG-mapper (Gene functional annotation)
+conda create -n eggnog-mapper -c bioconda eggnog-mapper=2.1.12 -y
+conda activate eggnog-mapper
+conda env config vars set EGGNOG_DATA_DIR="/db/eggnog/"
+conda deactivate
+conda activate eggnog-mapper
+echo $EGGNOG_DATA_DIR
+download_eggnog_data.py --data_dir /db/eggnog
+conda deactivate
+
+##########################################################################
+# FastMLST (Multi-Locus Sequence Typing)
+conda create -n fastmlst -c bioconda fastmlst -y
+conda activate fastmlst
+fastmlst -t 1 --update-mlst
+conda deactivate
+
+##########################################################################
+# PanViTa (Virulence and antimicrobial resistance prediction)
+conda create -n panvita -y
+conda activate panvita
+conda install -c anaconda wget basemap -y
+conda install seaborn pandas -y
+conda install -c conda-forge matplotlib -y
+cd
+git clone https://github.com/dlnrodrigues/panvita.git
+cd panvita
+sed -i 's/VFDB_setA_pro/VFDB_setB_pro/' panvita.py #For full dataset
+sed -i 's/vfdb_core/vfdb_full/g' panvita.py
+python3 panvita.py -u
+python3 panvita.py -h
+conda deactivate
+
+##########################################################################
+# Prokka (Genome annotation)
+conda create -n prokka -c bioconda prokka -y
+
+##########################################################################
+# RGI (Antimicrobial resistance prediction)
+conda create -n rgi -c bioconda rgi -y
+sudo chmod 777 -R /usr/local/anaconda3/envs/rgi/lib/python3.8/site-packages/app/_db/.ncbirc #so all the users can run the program
 
 
 ##########################################################################

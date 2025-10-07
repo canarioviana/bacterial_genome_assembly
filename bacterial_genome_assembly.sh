@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 30/09/2025
+# Date: 07/10/2025
 # More info: see README.md in the repository
 
 
@@ -26,7 +26,7 @@ rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/
 sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.md5
 
 
-# ##########################################################################
+##########################################################################
 ## 1) Reads from ENA or GenBank
 
 # Create the tab-separated file "1_reads.tsv" containing the GenBank SRA or ENA accession number in the first column and the sample name in the second 
@@ -117,10 +117,10 @@ for r1 in 1_reads/*_1.fq.gz; do
         --overrepresentation_analysis \
         --in1 "$r1" \
         --in2 "$r2" \
-        --out1 "3_fastp/${sample}_1.fq.gz" \
-        --out2 "3_fastp/${sample}_2.fq.gz" \
-        --html "3_fastp/${sample}_fastp.html" \
-        --json "3_fastp/${sample}_fastp.json"
+        --out1 "3_fastp/${sample}_trimmed_1.fq.gz" \
+        --out2 "3_fastp/${sample}_trimmed_2.fq.gz" \
+        --html "3_fastp/${sample}_trimmed_fastp.html" \
+        --json "3_fastp/${sample}_trimmed_fastp.json"
 done
 # Deactivate Conda environment
 conda activate base
@@ -176,8 +176,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     -t $(nproc) \
     --spades_options "--cov-cutoff auto" \
     --min_fasta_length 200 \
-    -1 "3_fastp/${sample}_1.fq.gz" \
-    -2 "3_fastp/${sample}_2.fq.gz" \
+    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
+    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
     -o "5_unicycler/${sample}_unicycler"
 done
 # Deactivate Conda environment
@@ -203,8 +203,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     --assembler spades \
     --opts "--cov-cutoff auto" \
     --minlen 200 \
-    --R1 "3_fastp/${sample}_1.fq.gz" \
-    --R2 "3_fastp/${sample}_2.fq.gz" \
+    --R1 "3_fastp/${sample}_trimmed_1.fq.gz" \
+    --R2 "3_fastp/${sample}_trimmed_2.fq.gz" \
     --outdir "5_shovill/${sample}_shovill"
 done
 # Deactivate Conda environment
@@ -228,8 +228,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     -t $(nproc) \
     --isolate \
     --cov-cutoff auto \
-    -1 "3_fastp/${sample}_1.fq.gz" \
-    -2 "3_fastp/${sample}_2.fq.gz" \
+    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
+    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
     -o "5_spades/${sample}_spades"
     # Activate Conda environment
     conda activate seqkit
@@ -422,14 +422,14 @@ for file in 6_assemblies/*.fasta; do
     # Inform the sample
     echo -e Calculating sequencing coverage for assembly: $assembly
     echo -e Assembly file: ${file}
-    echo -e R1 file: "3_fastp/${sample}_1.fq.gz"
-    echo -e R2 file: "3_fastp/${sample}_2.fq.gz"
+    echo -e R1 file: "3_fastp/${sample}_trimmed_1.fq.gz"
+    echo -e R2 file: "3_fastp/${sample}_trimmed_2.fq.gz"
     # Count bases in assembly
     bases_in_assembly=$(grep -v '^>' "$file" | tr -d '\n' | wc -c)
     echo -e Bases in assembly: $bases_in_assembly
     # Count bases in sequencing files
     # bases_in_reads=$(zcat 3_fastp/"$sample"*.gz | awk 'NR%4==2 {print $0}' | tr -d '\n' | wc -c)
-    bases_in_reads=$(zcat "3_fastp/${sample}_1.fq.gz" "3_fastp/${sample}_2.fq.gz" | 
+    bases_in_reads=$(zcat "3_fastp/${sample}_trimmed_1.fq.gz" "3_fastp/${sample}_trimmed_2.fq.gz" | 
                      awk 'NR%4==2 {print length}' | paste -sd+ | bc)
     echo -e Bases in reads: $bases_in_reads
     # Calculate vertical coverage
@@ -578,6 +578,9 @@ zip -r 9_mobsuite.zip 9_mobsuite
 # Delete output file
 rm -r 9_mobsuite
 
+# In case of a novel plasmid, you will have to change its temporary name given by MOB-suite to an appropriate and shorter name.
+
+
 # Genome submission to GenBank
 
 # Submission portal
@@ -623,8 +626,8 @@ for r1 in ../3_fastp/*1.fq.gz; do
     # Inform the current sample being processed
     echo "Processing sample: ${sample}"
     # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_1.fq.gz" -o "3_fastp/${sample}_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_2.fq.gz" -o "3_fastp/${sample}_2.fq.gz"
+    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_trimmed_1.fq.gz"
+    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
 done
 # Deactivate Conda environment
 conda activate base
@@ -647,8 +650,8 @@ for sample in $samples; do
     # Inform the current sample being processed
     echo "Processing sample: ${sample}"
     # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_1.fq.gz" -o "3_fastp/${sample}_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_2.fq.gz" -o "3_fastp/${sample}_2.fq.gz"
+    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_1.fq.gz"
+    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
 done
 # Deactivate Conda environment
 conda activate base

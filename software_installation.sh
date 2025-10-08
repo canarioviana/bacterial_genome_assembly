@@ -77,6 +77,8 @@ conda config --add channels anaconda
 conda config --add channels r
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+# Set libmamba as enviroment solver. It is faster than the classic solver
+conda config --set solver libmamba
 # Update Miniconda
 conda update conda -y # If the message "Terms of Service have not been accepted" appears, execute the command lines shown in the message and try this command again.
 # Show Conda configuration
@@ -133,6 +135,8 @@ conda config --add channels bioconda
 conda config --add channels defaults
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+# Set libmamba as enviroment solver. It is faster than the classic solver
+conda config --set solver libmamba
 # Update Miniconda
 conda update conda -y
 # Show Conda configuration
@@ -340,7 +344,7 @@ conda create -n prokka -c bioconda prokka -y
 
 ##########################################################################
 # RGI (Antimicrobial resistance prediction)
-conda create -n rgi -c bioconda rgi -y
+conda create -n rgi -c conda-forge -c bioconda -c defaults rgi -y
 sudo chmod 777 -R /usr/local/anaconda3/envs/rgi/lib/python3.8/site-packages/app/_db/.ncbirc #so all the users can run the program
 
 

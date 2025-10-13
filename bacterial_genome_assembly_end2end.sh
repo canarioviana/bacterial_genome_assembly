@@ -1,12 +1,17 @@
+#!/bin/bash
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
-# ⚠️ DO NOT execute this script entirely at once!
-# Copy and paste individual command lines into the Linux terminal as needed.
-# This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
+# Workflow: FastQC+MultiQC -> Fastp -> FastQC+MultiQC -> Unicycler -> CheckM2 -> GUNC -> QUAST -> Barnnap -> Sequencing coverage-> GTDB-Tk -> MOB-suite  
+#
+# Put this file on the working directory with the directory containning the sequencing reads (1_reads)
+# The sequencing reads names must be in the format samplename_1.fq.gz and  samplename_2.fq.gz
+#
+# Execute the script using the command lines below
+# chmod +x bacterial_genome_assembly_end2end.sh
+# ./bacterial_genome_assembly_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
 # Date: 12/10/2025
-# More info: see README.md in the repository
 
 
 ############################################################
@@ -15,60 +20,106 @@
 
 
 ############################################################
+## 0) Error handling and checking Conda installation
+############################################################
+
+############################################################
+## Error handling
+# Exit immediately if a command fails (returns a non-zero exit code)
+set -e
+# Ensure that a pipeline (command1 | command2) fails if any command in the pipe fails
+set -o pipefail
+
+############################################################
+## Check if the 'conda' command is available on the system PATH
+if command -v conda &> /dev/null; then
+    # Locate the base Conda installation path
+    CONDA_BASE=$(conda info --base)
+    # Makes 'conda activate' available in the current subshell
+    source "$CONDA_BASE/etc/profile.d/conda.sh"
+else
+    echo "ERROR: The 'conda' command was not found" >&2
+    echo "Ensure Conda or Miniconda is installed and configured in your PATH" >&2
+    exit 1
+fi
+
+
+############################################################
 ## 1) Reads stored as local files
 ############################################################
 
 ############################################################
-## Reads directory and input files
+## Checking reads directory
 
-# Create the reads directory
-mkdir 1_reads
-# Put the reads in 1_reads
-
-############################################################
-## Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz 
-
-# For example, from samplename_R1_001.fastq.gz and samplename_R2_001.fastq.gz to samplename_1.fq.gz and samplename_2.fq.gz 
-rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.fastq.gz*
-# In case there are also md5 files, you need to change the file names inside the md5 file
-sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.md5
-
+# Checking wether the directory 1_reads exists
+if [ ! -d 1_reads ]; then
+    echo "The reads directory '1_reads' was not found" >&2
+    echo "Please create it and put the files in it" >&2
+    exit 1
+fi
 
 ############################################################
-## 1) Reads from ENA or GenBank
-############################################################
+## Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
+
+# Checking the presence of files in the format 1_reads/*_R1_001.fastq.gz
+# sem acionar o 'set -e' se o comando falhar.
+if ls 1_reads/*_R1_001.fastq.gz > /dev/null 2>&1; then
+    echo "Found files in the format 1_reads/*_R1_001.fastq.gz" >&2
+    echo "Renaming them and their pairs to the format *_1.fq.gz and *_2.fq.gz" >&2
+    # Rename the .fq.gz files
+    rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.fastq.gz
+
+    # Checking the presence of .md5 files
+    if ls 1_reads/*_R1_001.fastq.gz.md5 > /dev/null 2>&1; then
+        # Rename the file names inside the .md5 files
+        sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.md5
+        # Rename the .md5 files
+        rename 's/_R1_001\.fastq\.gz\.md5/_1.fq.gz\.md5/; s/_R2_001\.fastq\.gz\.md5/_2.fq.gz\.md5/' 1_reads/*.fastq.gz.md5
+    fi
+
+else
+    :
+fi
 
 ############################################################
-## Input file and directory
+## Checking the presence, names and pairing of the input files
+files_found=0
+missing_pairs=0
+#Loop
+for r1 in 1_reads/*_1.fq.gz; do
+    #Check the presence of r1 file
+    if [[ "$r1" == "1_reads/*_1.fq.gz" ]]; then
+        break 
+    fi
 
-# Create the tab-separated file "1_reads.tsv" containing the GenBank SRA or ENA accession number in the first column and the sample name in the second 
-# Create the reads directory
-mkdir 1_reads
+    # If at least one *_1.fq.gz file was found
+    files_found=1
+
+    # Extract r2 file name
+    r2="${r1/_1.fq.gz/_2.fq.gz}"
+
+    #Check the presence of r2 file
+    if [ ! -f "$r2" ]; then
+        echo "Expected file "${r2}" not found" >&2
+        missing_pairs=1
+    fi
+done
+
+# Final reports
+if [ "$files_found" -eq 0 ]; then
+    echo "No read files in the format 'samplename_1.fq.gz' was found in the diretory '1_reads'" >&2
+    exit 1
+fi
+if [ "$missing_pairs" -eq 1 ]; then
+    echo "The script requires read pairs for all samples in the format *_1.fq.gz and *_2.fq.gz" >&2
+    echo "Rename them or put them in the diretory 1_reads" >&2
+    exit 1
+fi
+
 
 ############################################################
-## Fastq-dl
-
-# Activate Conda environment
-conda activate fastq-dl
-# Loop through file lines
-while IFS=$'\t' read -r -a column; do
-  accession=${column[0]}
-  sample=${column[1]}
-  echo "Downloading sample: $sample (accession: $accession)"
-  # Run fastq-dl
-  fastq-dl --outdir 1_reads --prefix "$sample" -a "$accession"
-done < 1_reads.tsv
-echo "Download process complete. Deactivating the environment."
-# Deactivate Conda environment
-conda activate base
-# Rename files
-while IFS=$'\t' read -r -a column; do
-  echo "Renaming files"
-  accession=${column[0]}
-  sample=${column[1]}
-  mv "1_reads/${accession}_1.fastq.gz" "1_reads/${sample}_1.fq.gz"
-  mv "1_reads/${accession}_2.fastq.gz" "1_reads/${sample}_2.fq.gz"
-done < 1_reads.tsv
+## THE SCRIPT BELOW ARE LINES SELECTED FROM THE FILE bacterial_genome_assembly.SH
+############################################################
 
 
 ############################################################
@@ -215,72 +266,6 @@ conda activate base
 # Compress the output directory
 zip -r 5_unicycler.zip 5_unicycler
 
-############################################################
-## Shovill (only for prokaryotic genomes)
-
-# Create an output directory
-mkdir 5_shovill
-# Activate Conda environment
-conda activate shovill
-# Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
-    # Extract file name
-    filename=${r1##*/}
-    # Extract sample name
-    sample=${filename%%_*}
-    # Run shovill
-    shovill \
-    --cpus $(nproc --ignore=1) \
-    --assembler spades \
-    --opts "--cov-cutoff auto" \
-    --minlen 200 \
-    --R1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    --R2 "3_fastp/${sample}_trimmed_2.fq.gz" \
-    --outdir "5_shovill/${sample}_shovill"
-done
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 5_shovill.zip 5_shovill
-
-############################################################
-## SPAdes
-
-mkdir 5_spades
-# Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
-    # Extract file name
-    filename=${r1##*/}
-    # Extract sample name
-    sample=${filename%%_*}
-    # Activate Conda environment
-    conda activate spades
-    # Run SPAdes
-    spades.py \
-    -t $(nproc --ignore=1) \
-    --isolate \
-    --cov-cutoff auto \
-    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
-    -o "5_spades/${sample}_spades"
-    # Activate Conda environment
-    conda activate seqkit
-    # Run SeqKit for scaffolds
-    seqkit seq \
-    --min-len 200 \
-    5_spades/"$sample"_spades/scaffolds.fasta \
-    > 5_spades/"$sample"_spades/scaffolds_seqkit.fasta
-    # Run SeqKit for contigs
-    seqkit seq \
-    --min-len 200 \
-    5_spades/"$sample"_spades/contigs.fasta \
-    > 5_spades/"$sample"_spades/contigs_seqkit.fasta
-done
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 5_spades.zip 5_spades
-
 
 ############################################################
 ## 6) Directory containning assemblies
@@ -302,52 +287,6 @@ for dir in 5_unicycler/*/; do
     # Copy and rename the assembly file
     cp "${dir}assembly.fasta" "6_assemblies/${sample}.fasta"
 done
-
-############################################################
-## Assemblies directory, from Shovill
-
-# Create an output directory
-mkdir 6_assemblies
-# Loop through a list of directories
-for dir in 5_shovill/*/; do
-    # Extract sample name from directory name
-    # sample=$(basename "$directory" _shovill)
-    # Extract directory name
-    dirname=${dir#*/}
-    # Extract sample name
-    sample=${dirname%%_shovill*}
-    # Copy and rename the assembly file
-    cp "${dir}contigs.fa" "6_assemblies/${sample}_shovill.fasta"
-    # Keep only the contig ID in the contig header
-    sed -i 's/ .*//g' "6_assemblies/${sample}_shovill.fasta"
-done
-
-############################################################
-## Assemblies directory, from SPAdes scaffolds
-
-# Create an output directory
-mkdir 6_assemblies
-# Loop through a list of directories
-for dir in 5_spades/*/; do
-    # Extract sample name from directory name
-    # sample=$(basename "$directory" _spades)
-    # Extract directory name
-    dirname=${dir#*/}
-    # Extract sample name
-    sample=${dirname%%_spades*}
-    # Copy and rename the assembly file
-    cp "5_spades/${sample}_spades/scaffolds_seqkit.fasta" "6_assemblies/${sample}_spades.fasta"
-done
-
-############################################################
-## Compress the directory containning the final assembly files
-
-# Compress the directory
-zip -r 6_assemblies.zip 6_assemblies
-# # Delete the assemblers output directory
-# rm -r 5_unicycler
-# rm -r 5_shovill
-# rm -r 5_spades
 
 
 ############################################################
@@ -599,11 +538,11 @@ done
 ## Add molecule attribution to contigs. Required for genome submission
 
 # Copy assemblies directory
-cp -r 6_assemblies 10_assemblies_for_analysis
+cp -r 6_assemblies 10_assemblies_for_genbank
 # Change extension to .fsa
-rename "s/.fasta$/.fsa/" 10_assemblies_for_analysis/*.fasta
+rename "s/.fasta$/.fsa/" 10_assemblies_for_genbank/*.fasta
 # Loop through a list of files (assemblies)
-for assembly in 10_assemblies_for_analysis/*.fsa; do
+for assembly in 10_assemblies_for_genbank/*.fsa; do
     # Extract file name
     filename=${assembly##*/}
     # Extract sample name
@@ -637,7 +576,7 @@ for assembly in 10_assemblies_for_analysis/*.fsa; do
     done < 9_mobsuite/"$sample"_mobsuite/contig_report.txt
 done
 # Compress the output directory
-zip -r 10_assemblies_for_analysis.zip 10_assemblies_for_analysis
+zip -r 10_assemblies_for_genbank.zip 10_assemblies_for_genbank
 # Compress mob-suite directory
 zip -r 9_mobsuite.zip 9_mobsuite
 # Delete output file
@@ -664,66 +603,9 @@ rm -r 9_mobsuite
 # Choose the "Batch submission", even for a single submission: “New submission” escolher a opção “Batch/multiple genomes (maximum 400 per submission)”.
 # Choose the genome annotation with PGAP: "Annotate this prokaryotic genome in the NCBI Prokaryotic Annotation Pipeline (PGAP) before its release"
 # Upload a table containing the genomes metadata. A template (Batch genomes: Genome Info file template) is available in https://submit.ncbi.nlm.nih.gov/templates/.
-# Upload the .fsa files in the directory 10_assemblies_for_analysis
+# Upload the .fsa files in the directory 10_assemblies_for_genbank
 
 # Submit sequencing reads
 # https://submit.ncbi.nlm.nih.gov/subs/sra/
 # Upload a table containing the sequencing metadata. A template (SRA: Metadata spreadsheet with sample names) is available in https://submit.ncbi.nlm.nih.gov/templates/.
 # Upload the .fq.gz files in directory 1_reads
-
-
-############################################################
-## Downsampling in case a high coverage made the Unicycler assemblies incomplete
-############################################################
-
-############################################################
-## Downsampling all samples
-
-# Create working directory
-mkdir -p downsampling/3_fastp
-# Go to working directory
-cd downsampling
-# Activate Conda environment
-conda activate seqkit
-# Loop through a list of files
-for r1 in ../3_fastp/*1.fq.gz; do
-    # Extract file name
-    filename=${r1##*/}
-    # Extract sample name
-    sample=${filename%%_*}
-    # Inform the current sample being processed
-    echo "Processing sample: ${sample}"
-    # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_trimmed_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
-done
-# Deactivate Conda environment
-conda activate base
-# Perform the Unicycler assembly and downstream steps
-# Go back to the main working directory
-# cd ..
-
-############################################################
-## Downsampling a list of samples
-
-# Create working directory
-mkdir -p downsampling/3_fastp
-# Go to working directory
-cd downsampling
-# Declare list of sample names separated by spaces
-samples="sample1 sample2 sample3"
-# Activate Conda environment
-conda activate seqkit
-# Loop through a list of samples
-for sample in $samples; do
-    # Inform the current sample being processed
-    echo "Processing sample: ${sample}"
-    # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
-done
-# Deactivate Conda environment
-conda activate base
-# Perform the Unicycler assembly and downstream steps
-# Go back to the main working directory
-# cd ..

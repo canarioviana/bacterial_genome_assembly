@@ -345,8 +345,6 @@ conda create -n prokka -c bioconda prokka -y
 ##########################################################################
 # RGI (Antimicrobial resistance prediction)
 conda create -n rgi -c conda-forge -c bioconda -c defaults rgi -y
-sudo chmod 777 -R /usr/local/anaconda3/envs/rgi/lib/python3.8/site-packages/app/_db/.ncbirc #so all the users can run the program
-
 
 ##########################################################################
 ## C) Connecting to a server and using Screen

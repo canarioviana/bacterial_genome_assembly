@@ -511,8 +511,10 @@ if find 9_mobsuite/ -maxdepth 2 -type f -name "mge.report.txt" | grep -q .; then
          echo; \
     done > 9_mobsuite/9_mobsuite_mge.report_all.tsv
 fi
-# Copy merged mobtyper result files to main directory
-cp 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv .
+# Copy merged mobtyper result file to main directory
+if ls 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv > /dev/null 2>&1; then
+    cp 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv .
+fi
 
 # Rename MOB-suite fasta files
 # Loop through a list of directories

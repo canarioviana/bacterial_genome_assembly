@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 12/10/2025
+# Date: 14/10/2025
 # More info: see README.md in the repository
 
 
@@ -552,8 +552,10 @@ done
 conda activate base
 
 # Merge contig_report.txt files
-# Create emppty output file
-> 9_mobsuite/contig_report_all.tsv
+# Delete merged file if it exists
+if [ -f 9_mobsuite/contig_report_all.tsv ]; then
+    rm 9_mobsuite/contig_report_all.tsv
+fi
 # Initialize control variable to check in the header was printed
 header_printed=0
 # Check if any contig_report.txt files exist
@@ -576,8 +578,10 @@ if find 9_mobsuite/ -maxdepth 2 -type f -name "contig_report.txt" | grep -q .; t
 fi
 
 # Merge mobtyper_results.txt files
-# Create emppty output file
-> 9_mobsuite/mobtyper_results_all.tsv
+# Delete merged file if it exists
+if [ -f 9_mobsuite/mobtyper_results.txt ]; then
+    rm 9_mobsuite/mobtyper_results_all.tsv
+fi
 # Initialize control variable to check in the header was printed
 header_printed=0
 # Check if any mobtyper_results.txt files exist
@@ -600,8 +604,10 @@ if find 9_mobsuite/ -maxdepth 2 -type f -name "mobtyper_results.txt" | grep -q .
 fi
 
 # Merge mge.report.txt files
-# Create emppty output file
-> 9_mobsuite/mge.report_all.tsv
+# Delete merged file if it exists
+if [ -f 9_mobsuite/mge.report_all.tsv ]; then
+    rm 9_mobsuite/mge.report_all.tsv
+fi
 # Initialize control variable to check in the header was printed
 header_printed=0
 # Check if any mge.report.txt files exist

@@ -245,7 +245,7 @@ conda create -n quast -c bioconda quast -y
 
 ##########################################################################
 # MOB-suite (Identify genetic mobile elements)
-conda create -n mob_suite -y
+conda create -n mob_suite -c bioconda mob_suite -y
 
 ##########################################################################
 # Openssh (Access computer remotely)

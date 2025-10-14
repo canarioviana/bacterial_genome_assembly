@@ -551,30 +551,81 @@ done
 # Deactivate Conda environment
 conda activate base
 
-# Merge contig_report.families.tsv files
-if find 9_mobsuite/ -maxdepth 2 -type f -name "mobtyper_results.txt" | grep -q .; then
-    for file in 9_mobsuite/*/contig_report.txt; do \
-        cat $file;\
-        echo;\
-    done > 9_mobsuite/9_mobsuite_contig_report.families.tsv
+# Merge contig_report.txt files
+# Create emppty output file
+> 9_mobsuite/contig_report_all.tsv
+# Initialize control variable to check in the header was printed
+header_printed=0
+# Check if any contig_report.txt files exist
+if find 9_mobsuite/ -maxdepth 2 -type f -name "contig_report.txt" | grep -q .; then
+    # Iterate over all found contig_report.txt files
+    for file in 9_mobsuite/*/contig_report.txt; do
+        # Test if the header was not printed yet
+        if [ $header_printed -eq 0 ]; then
+            # If not, contatenate the entire file
+            cat "$file" >> 9_mobsuite/contig_report_all.tsv
+            # Mark that the header was printed
+            header_printed=1
+        else
+        # The header was printed, so contanate file and ignore its header
+        tail -n +2 "$file" >> 9_mobsuite/contig_report_all.tsv  
+        fi
+        # Add a new line to separate the results of each sample
+        # echo >> 9_mobsuite/contig_report_all.tsv
+    done
 fi
-# Merge mobtyper_results.tsv files
+
+# Merge mobtyper_results.txt files
+# Create emppty output file
+> 9_mobsuite/mobtyper_results_all.tsv
+# Initialize control variable to check in the header was printed
+header_printed=0
+# Check if any mobtyper_results.txt files exist
 if find 9_mobsuite/ -maxdepth 2 -type f -name "mobtyper_results.txt" | grep -q .; then
-    for file in 9_mobsuite/*/mobtyper_results.txt; do \
-        cat $file; \
-        echo; \
-    done > 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv
+    # Iterate over all found mobtyper_results.txt files
+    for file in 9_mobsuite/*/mobtyper_results.txt; do
+        # Test if the header was not printed yet
+        if [ $header_printed -eq 0 ]; then
+            # If not, contatenate the entire file
+            cat "$file" >> 9_mobsuite/mobtyper_results_all.tsv
+            # Mark that the header was printed
+            header_printed=1
+        else
+        # The header was printed, so contanate file and ignore its header
+        tail -n +2 "$file" >> 9_mobsuite/mobtyper_results_all.tsv  
+        fi
+        # Add a new line to separate the results of each sample
+        # echo >> 9_mobsuite/mobtyper_results_all.tsv
+    done
 fi
-# Merge contig_report.families.tsv files
+
+# Merge mge.report.txt files
+# Create emppty output file
+> 9_mobsuite/mge.report_all.tsv
+# Initialize control variable to check in the header was printed
+header_printed=0
+# Check if any mge.report.txt files exist
 if find 9_mobsuite/ -maxdepth 2 -type f -name "mge.report.txt" | grep -q .; then
-    for file in 9_mobsuite/*/mge.report.txt; do \
-         cat $file; \
-         echo; \
-    done > 9_mobsuite/9_mobsuite_mge.report_all.tsv
+    # Iterate over all found mge.report.txt files
+    for file in 9_mobsuite/*/mge.report.txt; do
+        # Test if the header was not printed yet
+        if [ $header_printed -eq 0 ]; then
+            # If not, contatenate the entire file
+            cat "$file" >> 9_mobsuite/mge.report_all.tsv
+            # Mark that the header was printed
+            header_printed=1
+        else
+        # The header was printed, so contanate file and ignore its header
+        tail -n +2 "$file" >> 9_mobsuite/mge.report_all.tsv  
+        fi
+        # Add a new line to separate the results of each sample
+        # echo >> 9_mobsuite/mge.report_all.tsv
+    done
 fi
+
 # Copy merged mobtyper result file to main directory
-if ls 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv > /dev/null 2>&1; then
-    cp 9_mobsuite/9_mobsuite_mobtyper_results_all.tsv .
+if ls 9_mobsuite/mobtyper_results_all.tsv > /dev/null 2>&1; then
+    cp 9_mobsuite/mobtyper_results_all.tsv 9_mobsuite_mobtyper_results_all.tsv
 fi
 
 # Rename MOB-suite fasta files

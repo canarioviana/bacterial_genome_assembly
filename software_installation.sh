@@ -196,6 +196,10 @@ conda create -n fastqc -c bioconda fastqc -y
 # Fastp (Trim sequencing reads)
 conda create -n fastp -c bioconda fastp -y
 
+############################################################
+## GenomeScope (Estimation of genome size)
+conda create -n genomescope -c bioconda genomescope2 -y
+
 ##########################################################################
 # Git (Clone software directories from github.com)
 sudo apt-get update -y
@@ -234,6 +238,10 @@ conda deactivate
 conda activate gunc
 echo $GUNC_DB
 conda deactivate
+
+############################################################
+## KMC (K-mer counting of sequencing reads)
+conda create -n kmc -c bioconda kmc -y
 
 ##########################################################################
 # MultiQC (Unify read quality report)

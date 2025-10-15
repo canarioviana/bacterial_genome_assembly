@@ -738,51 +738,87 @@ rm -r 9_mobsuite
 ############################################################
 ## Downsampling all samples
 
+# Required coverage
+coverage=100
+
 # Create working directory
 mkdir -p downsampling/3_fastp
 # Go to working directory
 cd downsampling
-# Activate Conda environment
-conda activate seqkit
+
 # Loop through a list of files
-for r1 in ../3_fastp/*1.fq.gz; do
-    # Extract file name
-    filename=${r1##*/}
+for r1 in ../3_fastp/*_trimmed_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
+    # Extract r1 file name
+    r1filename=${r1##*/}
     # Extract sample name
-    sample=${filename%%_*}
-    # Inform the current sample being processed
-    echo "Processing sample: ${sample}"
-    # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_trimmed_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
-done
-# Deactivate Conda environment
-conda activate base
-# Perform the Unicycler assembly and downstream steps
-# Go back to the main working directory
-# cd ..
+    sample=${r1filename%%_*}
 
-############################################################
-## Downsampling a list of samples
+    # Create temporary directory
+    genomesizedir="3_fastp/${sample}_genomesize"
+    mkdir ${genomesizedir}
+    
+    # Count k-mers using KMC
+    # Activate Conda environment
+    conda activate kmc
+    # Count k-mers
+    echo "Counting k-mers from the sequencing reads of sample ${sample}"
+    # Create kmc temporary directory
+    mkdir kmc_tmp
+    # Create kmc list of input read files
+    ls -1 ${r1} ${r2} > kmc_input_reads.txt
+    kmc \
+    -t$(nproc --ignore=1) \
+    -k21 \
+    -m32 \
+    -ci1 \
+    -cs10000 \
+    @kmc_input_reads.txt \
+    kmc_count \
+    kmc_tmp
+    # Generate histogram for GenomeScope
+    echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
+    kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
+    # Deactivate Conda environment
+    conda activate base
 
-# Create working directory
-mkdir -p downsampling/3_fastp
-# Go to working directory
-cd downsampling
-# Declare list of sample names separated by spaces
-samples="sample1 sample2 sample3"
-# Activate Conda environment
-conda activate seqkit
-# Loop through a list of samples
-for sample in $samples; do
-    # Inform the current sample being processed
-    echo "Processing sample: ${sample}"
-    # Run seqkit sampling 200000 radom reads
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_1.fq.gz" -o "3_fastp/${sample}_1.fq.gz"
-    seqkit sample -n 2000000 -s 100 "../3_fastp/${sample}_trimmed_2.fq.gz" -o "3_fastp/${sample}_trimmed_2.fq.gz"
+    # Estimate genome size using GenomeScope
+    # Activate Conda environment
+    conda activate genomescope
+    #Run software
+    echo "Estimating genome size of sample ${sample}"
+    genomescope2 \
+    -k 21 \
+    -i kmc_histogram.tsv \
+    -o "${genomesizedir}/genomescope"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Get estimated genome size
+    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
+    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+    # Inform estimated genome size
+    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
+
+    # Move kmc temporary files to the genome size directory
+    mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+
+    # Downsampling reads using Rasusa
+    # Activate Conda environment
+    conda activate rasusa
+    # Generate output files names with sufix "ds"
+    output_r1="${r1filename/_1.fq.gz/_ds_1.fq.gz}"
+    output_r2="${r1filename/_1.fq.gz/_ds_2.fq.gz}"
+    # Run software
+    echo "Downsampling the sequencing reads of sample ${sample}"
+    rasusa reads \
+    --coverage ${coverage} \
+    --genome-size ${genomesize_mb}mb \
+    -s 100 \
+    -o "3_fastp/${output_r1}" \
+    -o "3_fastp/${output_r2}" \
+    "${r1}" "${r2}"
+    # Deactivate Conda environment
+    conda activate base
 done
-# Deactivate Conda environment
-conda activate base
-# Perform the Unicycler assembly and downstream steps
-# Go back to the main working directory
-# cd ..

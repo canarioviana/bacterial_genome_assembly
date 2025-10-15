@@ -803,6 +803,8 @@ for r1 in ../3_fastp/*_trimmed_1.fq.gz; do
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+    # Delete the directory kmc_tmp
+    rm -r kmc_tmp
 
     # Downsampling reads using Rasusa
     # Activate Conda environment

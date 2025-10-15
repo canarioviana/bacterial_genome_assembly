@@ -256,6 +256,10 @@ sudo ufw status
 sudo echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
 sudo systemctl restart ssh.service
 
+############################################################
+# Rasusa
+conda create -n rasusa -c bioconda rasusa -y
+
 ##########################################################################
 # Rename (Rename files using regular expressions)
 sudo apt-get install rename -y

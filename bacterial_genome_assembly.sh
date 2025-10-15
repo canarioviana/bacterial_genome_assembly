@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 14/10/2025
+# Date: 15/10/2025
 # More info: see README.md in the repository
 
 
@@ -755,7 +755,7 @@ for r1 in ../3_fastp/*_trimmed_1.fq.gz; do
     # Extract sample name
     sample=${r1filename%%_*}
 
-    # Create temporary directory
+    # Create directory for the genome size estimation results
     genomesizedir="3_fastp/${sample}_genomesize"
     mkdir ${genomesizedir}
     

@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 15/10/2025
+# Date: 16/10/2025
 # More info: see README.md in the repository
 
 
@@ -196,7 +196,9 @@ mkdir 5_unicycler
 # Activate Conda environment
 conda activate unicycler
 # Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
+for r1 in 3_fastp/*_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
     # Extract file name
     filename=${r1##*/}
     # Extract sample name
@@ -206,8 +208,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     -t $(nproc --ignore=1) \
     --spades_options "--cov-cutoff auto" \
     --min_fasta_length 200 \
-    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
+    -1 "${r1}" \
+    -2 "${r2}" \
     -o "5_unicycler/${sample}_unicycler"
 done
 # Deactivate Conda environment
@@ -223,7 +225,9 @@ mkdir 5_shovill
 # Activate Conda environment
 conda activate shovill
 # Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
+for r1 in 3_fastp/*_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
     # Extract file name
     filename=${r1##*/}
     # Extract sample name
@@ -234,8 +238,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     --assembler spades \
     --opts "--cov-cutoff auto" \
     --minlen 200 \
-    --R1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    --R2 "3_fastp/${sample}_trimmed_2.fq.gz" \
+    --R1 "${r1}" \
+    --R2 "${r2}" \
     --outdir "5_shovill/${sample}_shovill"
 done
 # Deactivate Conda environment
@@ -248,7 +252,9 @@ zip -r 5_shovill.zip 5_shovill
 
 mkdir 5_spades
 # Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
+for r1 in 3_fastp/*_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
     # Extract file name
     filename=${r1##*/}
     # Extract sample name
@@ -260,8 +266,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     -t $(nproc --ignore=1) \
     --isolate \
     --cov-cutoff auto \
-    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
+    -1 "${r1}" \
+    -2 "${r2}" \
     -o "5_spades/${sample}_spades"
     # Activate Conda environment
     conda activate seqkit
@@ -468,14 +474,14 @@ for file in 6_assemblies/*.fasta; do
     # Inform the sample
     echo -e Calculating sequencing coverage for assembly: $assembly
     echo -e Assembly file: ${file}
-    echo -e R1 file: "3_fastp/${sample}_trimmed_1.fq.gz"
-    echo -e R2 file: "3_fastp/${sample}_trimmed_2.fq.gz"
+    echo -e R1 file: 3_fastp/${sample}_*_1.fq.gz
+    echo -e R2 file: 3_fastp/${sample}_*_2.fq.gz
     # Count bases in assembly
     bases_in_assembly=$(grep -v '^>' "$file" | tr -d '\n' | wc -c)
     echo -e Bases in assembly: $bases_in_assembly
     # Count bases in sequencing files
     # bases_in_reads=$(zcat 3_fastp/"$sample"*.gz | awk 'NR%4==2 {print $0}' | tr -d '\n' | wc -c)
-    bases_in_reads=$(zcat "3_fastp/${sample}_trimmed_1.fq.gz" "3_fastp/${sample}_trimmed_2.fq.gz" | 
+    bases_in_reads=$(zcat 3_fastp/${sample}_*_1.fq.gz 3_fastp/${sample}_*_2.fq.gz | 
                      awk 'NR%4==2 {print length}' | paste -sd+ | bc)
     echo -e Bases in reads: $bases_in_reads
     # Calculate vertical coverage

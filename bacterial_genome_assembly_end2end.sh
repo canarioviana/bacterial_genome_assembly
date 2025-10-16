@@ -1,17 +1,17 @@
 #!/bin/bash
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
-# Workflow: FastQC+MultiQC -> Fastp -> FastQC+MultiQC -> Unicycler -> CheckM2 -> GUNC -> QUAST -> Barnnap -> Sequencing coverage-> GTDB-Tk -> MOB-suite  
+# Workflow: FastQC+MultiQC -> Fastp -> KMC+GenomeScope+Rasusa -> FastQC+MultiQC -> Unicycler -> CheckM2 -> GUNC -> QUAST -> Barrnap -> Vertical sequencing coverage -> GTDB-Tk -> MOB-suite -> Assign contig to molecule in fasta headers
 #
 # Put this file on the working directory with the directory containning the sequencing reads (1_reads)
-# The sequencing reads names must be in the format samplename_1.fq.gz and  samplename_2.fq.gz
+# The sequencing reads names must be in the format samplename_1.fq.gz and samplename_2.fq.gz
 #
 # Execute the script using the command lines below
 # chmod +x bacterial_genome_assembly_end2end.sh
 # ./bacterial_genome_assembly_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 14/10/2025
+# Date: 16/10/2025
 
 
 ############################################################
@@ -203,6 +203,99 @@ zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
 
 
 ############################################################
+## 3) Downsampling
+############################################################
+
+############################################################
+## Downsampling all samples
+
+# Required coverage
+coverage=100
+
+# Loop through a list of files
+for r1 in 3_fastp/*_trimmed_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
+    # Extract r1 file name
+    r1filename=${r1##*/}
+    # Extract sample name
+    sample=${r1filename%%_*}
+
+    # Create directory for the genome size estimation results
+    genomesizedir="3_fastp/${sample}_genomesize"
+    mkdir ${genomesizedir}
+    
+    # Count k-mers using KMC
+    # Activate Conda environment
+    conda activate kmc
+    # Count k-mers
+    echo "Counting k-mers from the sequencing reads of sample ${sample}"
+    # Create kmc temporary directory
+    mkdir kmc_tmp
+    # Create kmc list of input read files
+    ls -1 ${r1} ${r2} > kmc_input_reads.txt
+    kmc \
+    -t$(nproc --ignore=1) \
+    -k21 \
+    -m32 \
+    -ci1 \
+    -cs10000 \
+    @kmc_input_reads.txt \
+    kmc_count \
+    kmc_tmp
+    # Generate histogram for GenomeScope
+    echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
+    kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
+    # Deactivate Conda environment
+    conda activate base
+
+    # Estimate genome size using GenomeScope
+    # Activate Conda environment
+    conda activate genomescope
+    #Run software
+    echo "Estimating genome size of sample ${sample}"
+    genomescope2 \
+    -k 21 \
+    -i kmc_histogram.tsv \
+    -o "${genomesizedir}/genomescope"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Get estimated genome size
+    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
+    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+    # Inform estimated genome size
+    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
+
+    # Move kmc temporary files to the genome size directory
+    mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+    # Delete the directory kmc_tmp
+    rm -r kmc_tmp
+
+    # Downsampling reads using Rasusa
+    # Activate Conda environment
+    conda activate rasusa
+    # Generate output files names with sufix "ds"
+    output_r1="${r1filename/_1.fq.gz/_ds_1.fq.gz}"
+    output_r2="${r1filename/_1.fq.gz/_ds_2.fq.gz}"
+    # Run software
+    echo "Downsampling the sequencing reads of sample ${sample}"
+    rasusa reads \
+    --coverage ${coverage} \
+    --genome-size ${genomesize_mb}mb \
+    -s 100 \
+    -o "3_fastp/${output_r1}" \
+    -o "3_fastp/${output_r2}" \
+    "${r1}" "${r2}"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Delete the original trimmed reads files
+    rm "${r1}" "${r2}"
+done
+
+
+############################################################
 ## 4) Evaluate trimmed reads quality
 ############################################################
 
@@ -247,7 +340,9 @@ mkdir 5_unicycler
 # Activate Conda environment
 conda activate unicycler
 # Loop through a list of files
-for r1 in 3_fastp/*1.fq.gz; do
+for r1 in 3_fastp/*_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
     # Extract file name
     filename=${r1##*/}
     # Extract sample name
@@ -257,8 +352,8 @@ for r1 in 3_fastp/*1.fq.gz; do
     -t $(nproc --ignore=1) \
     --spades_options "--cov-cutoff auto" \
     --min_fasta_length 200 \
-    -1 "3_fastp/${sample}_trimmed_1.fq.gz" \
-    -2 "3_fastp/${sample}_trimmed_2.fq.gz" \
+    -1 "${r1}" \
+    -2 "${r2}" \
     -o "5_unicycler/${sample}_unicycler"
 done
 # Deactivate Conda environment
@@ -287,6 +382,14 @@ for dir in 5_unicycler/*/; do
     # Copy and rename the assembly file
     cp "${dir}assembly.fasta" "6_assemblies/${sample}.fasta"
 done
+
+############################################################
+## Compress the directory containning the final assembly files
+
+# Compress the directory
+zip -r 6_assemblies.zip 6_assemblies
+# # Delete the assemblers output directory
+# rm -r 5_unicycler
 
 
 ############################################################
@@ -407,14 +510,14 @@ for file in 6_assemblies/*.fasta; do
     # Inform the sample
     echo -e Calculating sequencing coverage for assembly: $assembly
     echo -e Assembly file: ${file}
-    echo -e R1 file: "3_fastp/${sample}_trimmed_1.fq.gz"
-    echo -e R2 file: "3_fastp/${sample}_trimmed_2.fq.gz"
+    echo -e R1 file: 3_fastp/${sample}_*_1.fq.gz
+    echo -e R2 file: 3_fastp/${sample}_*_2.fq.gz
     # Count bases in assembly
     bases_in_assembly=$(grep -v '^>' "$file" | tr -d '\n' | wc -c)
     echo -e Bases in assembly: $bases_in_assembly
     # Count bases in sequencing files
     # bases_in_reads=$(zcat 3_fastp/"$sample"*.gz | awk 'NR%4==2 {print $0}' | tr -d '\n' | wc -c)
-    bases_in_reads=$(zcat "3_fastp/${sample}_trimmed_1.fq.gz" "3_fastp/${sample}_trimmed_2.fq.gz" | 
+    bases_in_reads=$(zcat 3_fastp/${sample}_*_1.fq.gz 3_fastp/${sample}_*_2.fq.gz | 
                      awk 'NR%4==2 {print length}' | paste -sd+ | bc)
     echo -e Bases in reads: $bases_in_reads
     # Calculate vertical coverage
@@ -597,11 +700,11 @@ done
 ## Add molecule attribution to contigs. Required for genome submission
 
 # Copy assemblies directory
-cp -r 6_assemblies 10_assemblies_for_genbank
+cp -r 6_assemblies 10_assemblies_for_analysis
 # Change extension to .fsa
-rename "s/.fasta$/.fsa/" 10_assemblies_for_genbank/*.fasta
+rename "s/.fasta$/.fsa/" 10_assemblies_for_analysis/*.fasta
 # Loop through a list of files (assemblies)
-for assembly in 10_assemblies_for_genbank/*.fsa; do
+for assembly in 10_assemblies_for_analysis/*.fsa; do
     # Extract file name
     filename=${assembly##*/}
     # Extract sample name
@@ -635,7 +738,7 @@ for assembly in 10_assemblies_for_genbank/*.fsa; do
     done < 9_mobsuite/"$sample"_mobsuite/contig_report.txt
 done
 # Compress the output directory
-zip -r 10_assemblies_for_genbank.zip 10_assemblies_for_genbank
+zip -r 10_assemblies_for_analysis.zip 10_assemblies_for_analysis
 # Compress mob-suite directory
 zip -r 9_mobsuite.zip 9_mobsuite
 # Delete output file
@@ -662,9 +765,10 @@ rm -r 9_mobsuite
 # Choose the "Batch submission", even for a single submission: “New submission” escolher a opção “Batch/multiple genomes (maximum 400 per submission)”.
 # Choose the genome annotation with PGAP: "Annotate this prokaryotic genome in the NCBI Prokaryotic Annotation Pipeline (PGAP) before its release"
 # Upload a table containing the genomes metadata. A template (Batch genomes: Genome Info file template) is available in https://submit.ncbi.nlm.nih.gov/templates/.
-# Upload the .fsa files in the directory 10_assemblies_for_genbank
+# Upload the .fsa files in the directory 10_assemblies_for_analysis
 
 # Submit sequencing reads
 # https://submit.ncbi.nlm.nih.gov/subs/sra/
 # Upload a table containing the sequencing metadata. A template (SRA: Metadata spreadsheet with sample names) is available in https://submit.ncbi.nlm.nih.gov/templates/.
 # Upload the .fq.gz files in directory 1_reads
+

@@ -16,34 +16,32 @@
 ## 1) Sequencing reads directory and files
   ## Reads stored as local files
   ## Reads from ENA or GenBank
-## 2) Evaluate raw reads quality
+## 2) Raw reads quality assessment
     ## FastQC
     ## MultiQC
-## 3) Trimm reads and downsampling
+## 3) Raw reads trimming and downsampling 
     ## Fastp
-    ## KMC
-    ## GenomeScope
-    ## Rasusa
-## 4) Evaluate trimmed reads quality
+    ## Downsampling (KMC, GenomeScope and Rasusa)
+## 4) Trimmed reads quality assessment
     ## FastQC
     ## MultiQC
 ## 5) De novo assembly
     ## Unicycler
     ## Shovill
     ## SPAdes
-## 6) De novo assembly files
-## 7) Assembly quality control
+## 6) Organizing de novo assembly files
+## 7) Assembly quality assessment
     ## CheckM2
     ## GUNC
     ## QUAST
     ## Barrnap
-    ## Vertical sequencing coverage
-## 8) Taxonomy
+    ## Calculating vertical sequencing coverage
+## 8) Taxonomic assignment
     ## GTDB-Tk
     ## TYGS (online)
-## 9) Identification of plasmids
+## 9) Plasmids identification
     ## MOB-suite 
-## 10) Assign contig to molecule
+## 10) Assignment of contig to molecule
 
 
 ############################################################
@@ -95,7 +93,7 @@ done < 1_reads.tsv
 
 
 ############################################################
-## 2) Evaluate raw reads quality
+## 2) Raw reads quality assessment
 ############################################################
 
 ############################################################
@@ -113,7 +111,7 @@ conda activate base
 zip -r 2_fastqc.zip 2_fastqc
 
 ############################################################
-## FastQC -> MultiQC
+## MultiQC
 
 # Activate Conda environment
 conda activate multiqc
@@ -128,7 +126,7 @@ rm -r 2_fastqc 2_fastqc_multiqc
 
 
 ############################################################
-## 3) Trimm reads
+## 3) Raw reads trimming and downsampling 
 ############################################################
 
 ############################################################
@@ -173,9 +171,97 @@ conda activate base
 # Compress output files
 zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
 
+############################################################
+## Downsampling (KMC, GenomeScope and Rasusa)
+
+# Required coverage
+coverage=100
+
+# Loop through a list of files
+for r1 in 3_fastp/*_trimmed_1.fq.gz; do
+    # Extract r2 path
+    r2=${r1/_1.fq.gz/_2.fq.gz}
+    # Extract r1 file name
+    r1filename=${r1##*/}
+    # Extract sample name
+    sample=${r1filename%%_*}
+
+    # Create directory for the genome size estimation results
+    genomesizedir="3_fastp/${sample}_genomesize"
+    mkdir ${genomesizedir}
+    
+    # Count k-mers using KMC
+    # Activate Conda environment
+    conda activate kmc
+    # Count k-mers
+    echo "Counting k-mers from the sequencing reads of sample ${sample}"
+    # Create kmc temporary directory
+    mkdir kmc_tmp
+    # Create kmc list of input read files
+    ls -1 ${r1} ${r2} > kmc_input_reads.txt
+    kmc \
+    -t$(nproc --ignore=1) \
+    -k21 \
+    -m32 \
+    -ci1 \
+    -cs10000 \
+    @kmc_input_reads.txt \
+    kmc_count \
+    kmc_tmp
+    # Generate histogram for GenomeScope
+    echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
+    kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
+    # Deactivate Conda environment
+    conda activate base
+
+    # Estimate genome size using GenomeScope
+    # Activate Conda environment
+    conda activate genomescope
+    #Run software
+    echo "Estimating genome size of sample ${sample}"
+    genomescope2 \
+    -k 21 \
+    -i kmc_histogram.tsv \
+    -o "${genomesizedir}/genomescope"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Get estimated genome size
+    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
+    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+    # Inform estimated genome size
+    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
+
+    # Move kmc temporary files to the genome size directory
+    mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+    # Delete the directory kmc_tmp
+    rm -r kmc_tmp
+
+    # Downsampling reads using Rasusa
+    # Activate Conda environment
+    conda activate rasusa
+    # Generate output files names with sufix "ds"
+    output_r1="${r1filename/_1.fq.gz/_ds_1.fq.gz}"
+    output_r2="${r1filename/_1.fq.gz/_ds_2.fq.gz}"
+    # Run software
+    echo "Downsampling the sequencing reads of sample ${sample}"
+    rasusa reads \
+    --coverage ${coverage} \
+    --genome-size ${genomesize_mb}mb \
+    -s 100 \
+    -o "3_fastp/${output_r1}" \
+    -o "3_fastp/${output_r2}" \
+    "${r1}" "${r2}"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Delete the original trimmed reads files
+    rm "${r1}" "${r2}"
+done
+
 
 ############################################################
-## 4) Evaluate trimmed reads quality
+## 4) Trimmed reads quality assessment
 ############################################################
 
 ############################################################
@@ -193,7 +279,7 @@ conda activate base
 zip -r 4_fastqc.zip 4_fastqc
 
 ############################################################
-## Fastp -> FastQC -> MultiQC
+## MultiQC
 
 # Activate Conda environment
 conda activate multiqc
@@ -312,7 +398,7 @@ zip -r 5_spades.zip 5_spades
 
 
 ############################################################
-## 6) De novo assembly files
+## 6) Organization of de novo assembly files
 ############################################################
 
 ############################################################
@@ -380,7 +466,7 @@ zip -r 6_assemblies.zip 6_assemblies
 
 
 ############################################################
-## 7) Assembly quality control
+## 7) Assembly quality assessment
 ############################################################
 
 ############################################################
@@ -484,7 +570,7 @@ zip -r 7_barrnap.zip 7_barrnap
 rm -r 7_barrnap
 
 ############################################################
-## Vertical sequencing coverage
+## Calculation of vertical sequencing coverage
 
 # Create output file
 echo -e Sample"\t"Coverage > 7_coverage.tsv
@@ -520,7 +606,7 @@ done
 
 
 ############################################################
-## 8) Taxonomy
+## 8) Taxonomic assignment
 ############################################################
 
 ############################################################
@@ -680,7 +766,7 @@ done
 
 
 #########################################################################
-## 10) Assign contig to molecule
+## 10) Assignment of contig to molecule
 ############################################################
 
 ############################################################
@@ -758,98 +844,3 @@ rm -r 9_mobsuite
 # https://submit.ncbi.nlm.nih.gov/subs/sra/
 # Upload a table containing the sequencing metadata. A template (SRA: Metadata spreadsheet with sample names) is available in https://submit.ncbi.nlm.nih.gov/templates/.
 # Upload the .fq.gz files in directory 1_reads
-
-
-############################################################
-## Downsampling in case a high coverage made the Unicycler assemblies incomplete
-############################################################
-
-############################################################
-## Downsampling all samples
-
-# Required coverage
-coverage=100
-
-# Create working directory
-mkdir -p downsampling/3_fastp
-# Go to working directory
-cd downsampling
-
-# Loop through a list of files
-for r1 in ../3_fastp/*_trimmed_1.fq.gz; do
-    # Extract r2 path
-    r2=${r1/_1.fq.gz/_2.fq.gz}
-    # Extract r1 file name
-    r1filename=${r1##*/}
-    # Extract sample name
-    sample=${r1filename%%_*}
-
-    # Create directory for the genome size estimation results
-    genomesizedir="3_fastp/${sample}_genomesize"
-    mkdir ${genomesizedir}
-    
-    # Count k-mers using KMC
-    # Activate Conda environment
-    conda activate kmc
-    # Count k-mers
-    echo "Counting k-mers from the sequencing reads of sample ${sample}"
-    # Create kmc temporary directory
-    mkdir kmc_tmp
-    # Create kmc list of input read files
-    ls -1 ${r1} ${r2} > kmc_input_reads.txt
-    kmc \
-    -t$(nproc --ignore=1) \
-    -k21 \
-    -m32 \
-    -ci1 \
-    -cs10000 \
-    @kmc_input_reads.txt \
-    kmc_count \
-    kmc_tmp
-    # Generate histogram for GenomeScope
-    echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
-    kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
-    # Deactivate Conda environment
-    conda activate base
-
-    # Estimate genome size using GenomeScope
-    # Activate Conda environment
-    conda activate genomescope
-    #Run software
-    echo "Estimating genome size of sample ${sample}"
-    genomescope2 \
-    -k 21 \
-    -i kmc_histogram.tsv \
-    -o "${genomesizedir}/genomescope"
-    # Deactivate Conda environment
-    conda activate base
-
-    # Get estimated genome size
-    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
-    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
-    # Inform estimated genome size
-    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
-
-    # Move kmc temporary files to the genome size directory
-    mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
-    # Delete the directory kmc_tmp
-    rm -r kmc_tmp
-
-    # Downsampling reads using Rasusa
-    # Activate Conda environment
-    conda activate rasusa
-    # Generate output files names with sufix "ds"
-    output_r1="${r1filename/_1.fq.gz/_ds_1.fq.gz}"
-    output_r2="${r1filename/_1.fq.gz/_ds_2.fq.gz}"
-    # Run software
-    echo "Downsampling the sequencing reads of sample ${sample}"
-    rasusa reads \
-    --coverage ${coverage} \
-    --genome-size ${genomesize_mb}mb \
-    -s 100 \
-    -o "3_fastp/${output_r1}" \
-    -o "3_fastp/${output_r2}" \
-    "${r1}" "${r2}"
-    # Deactivate Conda environment
-    conda activate base
-done

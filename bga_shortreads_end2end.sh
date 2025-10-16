@@ -226,8 +226,10 @@ for r1 in 1_reads/*_1.fq.gz; do
 done
 # Deactivate Conda environment
 conda activate base
-# Compress output files
+# Compress report files
 zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
+# Delete report files
+rm 3_fastp/*.json 3_fastp/*.html
 
 ############################################################
 ## Downsampling (KMC, GenomeScope and Rasusa)
@@ -316,6 +318,10 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     # Delete the original trimmed reads files
     rm "${r1}" "${r2}"
 done
+# Compress output files
+zip -r 3_fastp_genomesize.zip 3_fastp/*_genomesize
+# Delete output files
+rm -r 3_fastp/*_genomesize
 
 
 ############################################################

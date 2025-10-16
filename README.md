@@ -1,4 +1,4 @@
-# 🦠 Bash Scripts for Bacterial Genome Assembly
+# Bash Scripts for Bacterial Genome Assembly
 
 This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly** and **annotation**.
 
@@ -61,3 +61,4 @@ It also includes detailed instructions for the installation of all necessary sof
 ## 9) Plasmids identification
     ## MOB-suite 
 ## 10) Assignment of contigs to molecules
+

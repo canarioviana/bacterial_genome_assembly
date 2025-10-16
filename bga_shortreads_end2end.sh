@@ -13,35 +13,35 @@
 
 
 ############################################################
-## GENOME ASSEMBLY WORKFLOW
+## GENOME ASSEMBLY WORKFLOW SUMMARY
 ############################################################
 
-## 1) Reads stored as local files
-## 2) Evaluate raw reads quality
+## 0) Error handling and checking Conda installation
+## 1) Sequencing reads directory and files
+  ## Reads stored as local files
+## 2) Raw reads quality assessment
     ## FastQC
     ## MultiQC
-## 3) Trimm reads and downsampling
+## 3) Raw reads trimming and downsampling
     ## Fastp
-    ## KMC
-    ## GenomeScope
-    ## Rasusa
-## 4) Evaluate trimmed reads quality
+    ## Downsampling (KMC, GenomeScope and Rasusa)
+## 4) Trimmed reads quality assessment
     ## FastQC
     ## MultiQC
 ## 5) De novo assembly
     ## Unicycler
-## 6) Directory containning assemblies
-## 7) Assembly quality control
+## 6) Organization of de novo assembly files
+## 7) Assembly quality assessment
     ## CheckM2
     ## GUNC
     ## QUAST
     ## Barrnap
-    ## Vertical sequencing coverage
-## 8) Taxonomy
+    ## Calculation of vertical sequencing coverage
+## 8) Taxonomic assignment
     ## GTDB-Tk
-## 9) Identification of plasmids
+## 9) Plasmid identification
     ## MOB-suite 
-## 10) Assignt contig to molecule
+## 10) Assignment of contigs to molecules
 
 
 ############################################################
@@ -70,8 +70,11 @@ fi
 
 
 ############################################################
-## 1) Reads stored as local files
+## 1) Sequencing reads directory and files
 ############################################################
+
+############################################################
+## Reads stored as local files
 
 ############################################################
 ## Checking reads directory
@@ -143,12 +146,12 @@ fi
 
 
 ############################################################
-## THE SCRIPT BELOW ARE LINES SELECTED FROM THE FILE bacterial_genome_assembly.SH
+## THE SCRIPT BELOW ARE LINES SELECTED FROM THE FILE bga_shortreads_script.sh
 ############################################################
 
 
 ############################################################
-## 2) Evaluate raw reads quality
+## 2) Raw reads quality assessment
 ############################################################
 
 ############################################################
@@ -181,7 +184,7 @@ rm -r 2_fastqc 2_fastqc_multiqc
 
 
 ############################################################
-## 3) Trimm reads
+## 3) Raw reads trimming and downsampling 
 ############################################################
 
 ############################################################
@@ -226,13 +229,8 @@ conda activate base
 # Compress output files
 zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
 
-
 ############################################################
-## 3) Downsampling
-############################################################
-
-############################################################
-## Downsampling all samples
+## Downsampling (KMC, GenomeScope and Rasusa)
 
 # Required coverage
 coverage=100
@@ -321,7 +319,7 @@ done
 
 
 ############################################################
-## 4) Evaluate trimmed reads quality
+## 4) Trimmed reads quality assessment
 ############################################################
 
 ############################################################
@@ -388,7 +386,7 @@ zip -r 5_unicycler.zip 5_unicycler
 
 
 ############################################################
-## 6) Directory containning assemblies
+## 6) Organization of de novo assembly files
 ############################################################
 
 ############################################################
@@ -418,7 +416,7 @@ zip -r 6_assemblies.zip 6_assemblies
 
 
 ############################################################
-## 7) Assembly quality control
+## 7) Assembly quality assessment
 ############################################################
 
 ############################################################
@@ -558,7 +556,7 @@ done
 
 
 ############################################################
-## 8) Taxonomy
+## 8) Taxonomic assignment
 ############################################################
 
 ############################################################
@@ -596,7 +594,7 @@ conda activate base
 
 
 ############################################################
-## 9) Identification of plasmids
+## 9) Plasmid identification
 ############################################################
 
 ############################################################
@@ -718,11 +716,11 @@ done
 
 
 #########################################################################
-## 10) Assembly files for genome submission
+## 10) Assignment of contigs to molecules
 ############################################################
 
 ############################################################
-## Add molecule attribution to contigs. Required for genome submission
+## Add molecule attribution to contigs. Required for batch genome submission.
 
 # Copy assemblies directory
 cp -r 6_assemblies 10_assemblies_for_analysis

@@ -35,13 +35,13 @@
     ## GUNC
     ## QUAST
     ## Barrnap
-    ## Calculating vertical sequencing coverage
+    ## Calculation of vertical sequencing coverage
 ## 8) Taxonomic assignment
     ## GTDB-Tk
     ## TYGS (online)
 ## 9) Plasmids identification
     ## MOB-suite 
-## 10) Assignment of contig to molecule
+## 10) Assignment of contigs to molecules
 
 
 ############################################################

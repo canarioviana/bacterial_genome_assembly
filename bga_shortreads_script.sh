@@ -10,44 +10,67 @@
 
 
 ############################################################
-## GENOME ASSEMBLY WORKFLOW
+## GENOME ASSEMBLY WORKFLOW SUMMARY
 ############################################################
+
+## 1) Sequencing reads directory and files
+  ## Reads stored as local files
+  ## Reads from ENA or GenBank
+## 2) Evaluate raw reads quality
+    ## FastQC
+    ## MultiQC
+## 3) Trimm reads and downsampling
+    ## Fastp
+    ## KMC
+    ## GenomeScope
+    ## Rasusa
+## 4) Evaluate trimmed reads quality
+    ## FastQC
+    ## MultiQC
+## 5) De novo assembly
+    ## Unicycler
+    ## Shovill
+    ## SPAdes
+## 6) De novo assembly files
+## 7) Assembly quality control
+    ## CheckM2
+    ## GUNC
+    ## QUAST
+    ## Barrnap
+    ## Vertical sequencing coverage
+## 8) Taxonomy
+    ## GTDB-Tk
+    ## TYGS (online)
+## 9) Identification of plasmids
+    ## MOB-suite 
+## 10) Assign contig to molecule
 
 
 ############################################################
-## 1) Reads stored as local files
+## 1) Sequencing reads directory and files
 ############################################################
 
 ############################################################
-## Reads directory and input files
+## Reads stored as local files
 
 # Create the reads directory
 mkdir 1_reads
 # Put the reads in 1_reads
 
-############################################################
-## Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz 
-
+# Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz 
 # For example, from samplename_R1_001.fastq.gz and samplename_R2_001.fastq.gz to samplename_1.fq.gz and samplename_2.fq.gz 
 rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.fastq.gz*
 # In case there are also md5 files, you need to change the file names inside the md5 file
 sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.md5
 
-
 ############################################################
-## 1) Reads from ENA or GenBank
-############################################################
-
-############################################################
-## Input file and directory
+## Reads from ENA or GenBank
 
 # Create the tab-separated file "1_reads.tsv" containing the GenBank SRA or ENA accession number in the first column and the sample name in the second 
 # Create the reads directory
 mkdir 1_reads
 
-############################################################
 ## Fastq-dl
-
 # Activate Conda environment
 conda activate fastq-dl
 # Loop through file lines
@@ -289,7 +312,7 @@ zip -r 5_spades.zip 5_spades
 
 
 ############################################################
-## 6) Directory containning assemblies
+## 6) De novo assembly files
 ############################################################
 
 ############################################################
@@ -657,11 +680,11 @@ done
 
 
 #########################################################################
-## 10) Assembly files for genome submission
+## 10) Assign contig to molecule
 ############################################################
 
 ############################################################
-## Add molecule attribution to contigs. Required for genome submission
+## Add molecule attribution to contigs. Required for batch genome submission.
 
 # Copy assemblies directory
 cp -r 6_assemblies 10_assemblies_for_analysis

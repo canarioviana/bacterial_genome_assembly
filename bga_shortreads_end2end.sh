@@ -1,14 +1,12 @@
 #!/bin/bash
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
-# Workflow: FastQC+MultiQC -> Fastp -> KMC+GenomeScope+Rasusa -> FastQC+MultiQC -> Unicycler -> CheckM2 -> GUNC -> QUAST -> Barrnap -> Vertical sequencing coverage -> GTDB-Tk -> MOB-suite -> Assign contig to molecule in fasta headers
-#
 # Put this file on the working directory with the directory containning the sequencing reads (1_reads)
 # The sequencing reads names must be in the format samplename_1.fq.gz and samplename_2.fq.gz
 #
 # Execute the script using the command lines below
-# chmod +x bacterial_genome_assembly_end2end.sh
-# ./bacterial_genome_assembly_end2end.sh
+# chmod +x bga_shortreads_end2end.sh
+# ./bga_shortreads_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
 # Date: 16/10/2025
@@ -17,6 +15,33 @@
 ############################################################
 ## GENOME ASSEMBLY WORKFLOW
 ############################################################
+
+## 1) Reads stored as local files
+## 2) Evaluate raw reads quality
+    ## FastQC
+    ## MultiQC
+## 3) Trimm reads and downsampling
+    ## Fastp
+    ## KMC
+    ## GenomeScope
+    ## Rasusa
+## 4) Evaluate trimmed reads quality
+    ## FastQC
+    ## MultiQC
+## 5) De novo assembly
+    ## Unicycler
+## 6) Directory containning assemblies
+## 7) Assembly quality control
+    ## CheckM2
+    ## GUNC
+    ## QUAST
+    ## Barrnap
+    ## Vertical sequencing coverage
+## 8) Taxonomy
+    ## GTDB-Tk
+## 9) Identification of plasmids
+    ## MOB-suite 
+## 10) Assignt contig to molecule
 
 
 ############################################################

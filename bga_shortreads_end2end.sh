@@ -9,7 +9,7 @@
 # ./bga_shortreads_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 16/10/2025
+# Date: 17/10/2025
 
 
 ############################################################
@@ -90,7 +90,6 @@ fi
 ## Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
 
 # Checking the presence of files in the format 1_reads/*_R1_001.fastq.gz
-# sem acionar o 'set -e' se o comando falhar.
 if ls 1_reads/*_R1_001.fastq.gz > /dev/null 2>&1; then
     echo "Found files in the format 1_reads/*_R1_001.fastq.gz" >&2
     echo "Renaming them and their pairs to the format *_1.fq.gz and *_2.fq.gz" >&2
@@ -196,7 +195,7 @@ mkdir 3_fastp
 conda activate fastp
 # Loop through a list of files
 for r1 in 1_reads/*_1.fq.gz; do
-    # Obtain r2 path
+    # Extract r2 path
     r2="${r1/_1.fq.gz/_2.fq.gz}"
     # Extract r1 file name
     r1filename=${r1##*/}
@@ -372,7 +371,7 @@ conda activate unicycler
 for r1 in 3_fastp/*_1.fq.gz; do
     # Extract r2 path
     r2=${r1/_1.fq.gz/_2.fq.gz}
-    # Extract file name
+    # Extract r1 file name
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}

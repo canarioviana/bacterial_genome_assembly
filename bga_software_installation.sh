@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 15/10/2025
+# Date: 17/10/2025
 # More info: see README.md in the repository
 
 
@@ -198,13 +198,14 @@ conda create -n fastp -c bioconda fastp -y
 
 ############################################################
 # Fastplong
+conda create -n fastplong -c bioconda fastplong -y
 
 ############################################################
 # Flye
 conda create -n flye -c bioconda flye -y
 
 ############################################################
-## GenomeScope (Estimation of genome size)
+# GenomeScope (Estimation of genome size)
 conda create -n genomescope -c bioconda genomescope2 -y
 
 ##########################################################################
@@ -253,6 +254,10 @@ conda create -n kmc -c bioconda kmc -y
 ##########################################################################
 # MultiQC (Unify read quality report)
 conda create -n multiqc -c bioconda multiqc -y
+
+############################################################
+## NanoPlot
+conda create -n nanoplot -c bioconda nanoplot -y
 
 ##########################################################################
 # QUAST (Evaluate assembly fragmentation)

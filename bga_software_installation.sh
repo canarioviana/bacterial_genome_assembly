@@ -189,19 +189,19 @@ conda deactivate
 conda create -n fastq-dl -c bioconda fastq-dl -y
 
 ##########################################################################
-# FastQC (Evaluate read quality)
+# FastQC (Evaluate short reads quality)
 conda create -n fastqc -c bioconda fastqc -y
 
 ##########################################################################
-# Fastp (Trim sequencing reads)
+# Fastp (Trim short reads)
 conda create -n fastp -c bioconda fastp -y
 
 ############################################################
-# Fastplong
+# Fastplong (Trim long reads)
 conda create -n fastplong -c bioconda fastplong -y
 
 ############################################################
-# Flye
+# Flye (De novo genome assembly from long sequencing reads)
 conda create -n flye -c bioconda flye -y
 
 ############################################################
@@ -214,11 +214,7 @@ sudo apt-get update -y
 sudo apt-get install git -y
 
 ##########################################################################
-# Gzip (Compress and decompress directories and files)
-sudo apt-get install gzip -y
-
-##########################################################################
-# GTDB-Tk (Taxonomyc analysis)
+# GTDB-Tk (Taxonomyc assignment)
 mkdir -p /db/gtdbtk/
 cd /db/
 wget -c --progress=bar https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
@@ -247,25 +243,25 @@ conda activate gunc
 echo $GUNC_DB
 conda deactivate
 
+##########################################################################
+# Gzip (Compress and decompress directories and files)
+sudo apt-get install gzip -y
+
 ############################################################
 ## KMC (K-mer counting of sequencing reads)
 conda create -n kmc -c bioconda kmc -y
+
+##########################################################################
+# MOB-suite (Plasmid identification)
+conda create -n mob_suite -c bioconda mob_suite -y
 
 ##########################################################################
 # MultiQC (Unify read quality report)
 conda create -n multiqc -c bioconda multiqc -y
 
 ############################################################
-## NanoPlot
+# NanoPlot (Evaluate long reads quality)
 conda create -n nanoplot -c bioconda nanoplot -y
-
-##########################################################################
-# QUAST (Evaluate assembly fragmentation)
-conda create -n quast -c bioconda quast -y
-
-##########################################################################
-# MOB-suite (Identify genetic mobile elements)
-conda create -n mob_suite -c bioconda mob_suite -y
 
 ##########################################################################
 # Openssh (Access computer remotely)
@@ -276,8 +272,12 @@ sudo ufw status
 sudo echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
 sudo systemctl restart ssh.service
 
+##########################################################################
+# QUAST (Evaluate assembly fragmentation)
+conda create -n quast -c bioconda quast -y
+
 ############################################################
-# Rasusa
+# Rasusa (Reads downsampling)
 conda create -n rasusa -c bioconda rasusa -y
 
 ##########################################################################
@@ -285,23 +285,23 @@ conda create -n rasusa -c bioconda rasusa -y
 sudo apt-get install rename -y
 
 ##########################################################################
-# Screen (Run the program in different screens)
-sudo apt-get install screen -y
-
-##########################################################################
 # seqkit (Filter sequences by size)
 conda create -n seqkit -c bioconda seqkit -y
 
 ##########################################################################
-# Shovill (De novo assembly)
+# Screen (Software to use multiple screens in a terminal)
+sudo apt-get install screen -y
+
+##########################################################################
+# Shovill (De novo assembly from short reads)
 conda create -n spades -c bioconda shovill -y
 
 ##########################################################################
-# SPAdes (De novo assembly)
+# SPAdes (De novo genome assembly from short reads or short and long reads)
 conda create -n spades -c bioconda spades -y
 
 ##########################################################################
-# Unicycler (De novo assembly)
+# Unicycler (De novo genome assembly from short reads or short and long sequencing reads)
 conda create -n unicycler -c bioconda unicycler -y
 
 ##########################################################################

@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 16/10/2025
+# Date: 17/10/2025
 # More info: see README.md in the repository
 
 
@@ -138,7 +138,7 @@ mkdir 3_fastp
 conda activate fastp
 # Loop through a list of files
 for r1 in 1_reads/*_1.fq.gz; do
-    # Obtain r2 path
+    # Extract r2 path
     r2="${r1/_1.fq.gz/_2.fq.gz}"
     # Extract r1 file name
     r1filename=${r1##*/}
@@ -314,7 +314,7 @@ conda activate unicycler
 for r1 in 3_fastp/*_1.fq.gz; do
     # Extract r2 path
     r2=${r1/_1.fq.gz/_2.fq.gz}
-    # Extract file name
+    # Extract r1 file name
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}
@@ -343,7 +343,7 @@ conda activate shovill
 for r1 in 3_fastp/*_1.fq.gz; do
     # Extract r2 path
     r2=${r1/_1.fq.gz/_2.fq.gz}
-    # Extract file name
+    # Extract r1 file name
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}
@@ -370,7 +370,7 @@ mkdir 5_spades
 for r1 in 3_fastp/*_1.fq.gz; do
     # Extract r2 path
     r2=${r1/_1.fq.gz/_2.fq.gz}
-    # Extract file name
+    # Extract r1 file name
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}

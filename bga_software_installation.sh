@@ -197,6 +197,13 @@ conda create -n fastqc -c bioconda fastqc -y
 conda create -n fastp -c bioconda fastp -y
 
 ############################################################
+# Fastplong
+
+############################################################
+# Flye
+conda create -n flye -c bioconda flye -y
+
+############################################################
 ## GenomeScope (Estimation of genome size)
 conda create -n genomescope -c bioconda genomescope2 -y
 

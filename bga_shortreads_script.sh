@@ -408,10 +408,12 @@ zip -r 5_spades.zip 5_spades
 ############################################################
 
 ############################################################
-## Assemblies directory, from Unicycler
-
-# Create an output directory
+## Create assemblies directory
 mkdir 6_assemblies
+
+############################################################
+## Assemblies from Unicycler
+
 # Loop through a list of directories
 for dir in 5_unicycler/*/; do
     # Extract sample name from directory name
@@ -425,10 +427,8 @@ for dir in 5_unicycler/*/; do
 done
 
 ############################################################
-## Assemblies directory, from Shovill
+## Assemblies from Shovill
 
-# Create an output directory
-mkdir 6_assemblies
 # Loop through a list of directories
 for dir in 5_shovill/*/; do
     # Extract sample name from directory name
@@ -444,10 +444,8 @@ for dir in 5_shovill/*/; do
 done
 
 ############################################################
-## Assemblies directory, from SPAdes scaffolds
+## Assemblies from SPAdes scaffolds
 
-# Create an output directory
-mkdir 6_assemblies
 # Loop through a list of directories
 for dir in 5_spades/*/; do
     # Extract sample name from directory name
@@ -461,14 +459,16 @@ for dir in 5_spades/*/; do
 done
 
 ############################################################
-## Compress the directory containning the final assembly files
+## Compress the assemblies directory
 
-# Compress the directory
 zip -r 6_assemblies.zip 6_assemblies
-# # Delete the assemblers output directory
-# rm -r 5_unicycler
-# rm -r 5_shovill
-# rm -r 5_spades
+
+############################################################
+## Delete the assemblers output directories
+
+rm -r 5_unicycler
+rm -r 5_shovill
+rm -r 5_spades
 
 
 ############################################################

@@ -284,6 +284,10 @@ conda create -n quast -c bioconda quast -y
 # Rasusa (Reads downsampling)
 conda create -n rasusa -c bioconda rasusa -y
 
+############################################################
+# Raven (De novo assembly from long reads)
+conda create -n raven -c bioconda raven-assembler -y
+
 ##########################################################################
 # Rename (Rename files using regular expressions)
 sudo apt-get install rename -y

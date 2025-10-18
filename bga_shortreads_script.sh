@@ -10,7 +10,7 @@
 
 
 ############################################################
-## GENOME ASSEMBLY WORKFLOW SUMMARY
+## SUMMARY OF GENOME ASSEMBLY WORKFLOW FROM SHORT-READS
 ############################################################
 
 ## 1) Sequencing reads directory and files

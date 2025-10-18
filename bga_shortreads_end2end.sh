@@ -9,7 +9,7 @@
 # ./bga_shortreads_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 17/10/2025
+# Date: 18/10/2025
 
 
 ############################################################
@@ -395,10 +395,12 @@ zip -r 5_unicycler.zip 5_unicycler
 ############################################################
 
 ############################################################
-## Assemblies directory, from Unicycler
-
-# Create an output directory
+## Create assemblies directory
 mkdir 6_assemblies
+
+############################################################
+## Assemblies from Unicycler
+
 # Loop through a list of directories
 for dir in 5_unicycler/*/; do
     # Extract sample name from directory name
@@ -412,12 +414,13 @@ for dir in 5_unicycler/*/; do
 done
 
 ############################################################
-## Compress the directory containning the final assembly files
+## Compress the assemblies directory
 
-# Compress the directory
 zip -r 6_assemblies.zip 6_assemblies
-# # Delete the assemblers output directory
-# rm -r 5_unicycler
+
+############################################################
+## Delete the assembler output directory
+rm -r 5_unicycler
 
 
 ############################################################

@@ -13,7 +13,7 @@
 
 
 ############################################################
-## GENOME ASSEMBLY END-TO-END WORKFLOW SUMMARY
+## SUMMARY OF END-TO-END GENOME ASSEMBLY WORKFLOW FROM SHORT-READS
 ############################################################
 
 ## 0) Error handling and checking Conda installation

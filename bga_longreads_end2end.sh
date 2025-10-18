@@ -199,7 +199,7 @@ rm -r 2_fastqc 2_fastqc_multiqc
 # Create an output directory
 mkdir 3_fastplong
 # Activate Conda environment
-conda activate fastp
+conda activate fastplong
 # Loop through a list of files
 for reads in 1_reads/*.fq.gz; do
     # Extract reads file name

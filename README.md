@@ -63,6 +63,8 @@ It also includes detailed instructions for the installation of all necessary sof
 ### 10) Assignment of contigs to molecules
 * MOB-suite and an inhouse script
 
+---
+
 ## 🛠️ The Long-Reads Genome Assembly Workflow
 
 ### 1) Sequencing reads directory and files
@@ -95,3 +97,4 @@ It also includes detailed instructions for the installation of all necessary sof
 * MOB-suite 
 ### 10) Assignment of contigs to molecules
 * MOB-suite and an inhouse script
+

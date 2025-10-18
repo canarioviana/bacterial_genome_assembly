@@ -261,7 +261,11 @@ conda create -n multiqc -c bioconda multiqc -y
 
 ############################################################
 # NanoPlot (Evaluate long reads quality)
-conda create -n nanoplot -c bioconda nanoplot -y
+conda create -n nanoplot -c bioconda 'python-kaleido>=1.0.0' nanoplot -y
+conda activate nanoplot
+plotly_get_chrome -y
+#sudo find ${CONDA_PREFIX} -type d -name "browser_exe" -print0 | xargs -0 sudo chmod -R a+rwx
+conda deactivate
 
 ##########################################################################
 # Openssh (Access computer remotely)

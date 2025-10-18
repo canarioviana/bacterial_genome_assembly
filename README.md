@@ -1,16 +1,16 @@
 # Bash Scripts for Bacterial Genome Assembly
 
-This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly** and **annotation**.
+This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly from short or long reads** and **genome annotation**.
 
 It also includes detailed instructions for the installation of all necessary software.
 
 ---
 
-## 📋 Contents and Usage Guidelines
+## 📋 Usage Guidelines
 
-* **Documentation:** The scripts provide comprehensive **software installation instructions** and **guidelines for genome submission**.
+* The scripts provide comprehensive **software installation instructions**, **a worfkflow for genome assembly**, **guidelines for genome submission** and **a worfkflow for genome annotation**
 
-* **`_end2end.sh` Files (Full Workflow):** These scripts encapsulate the complete workflow and **can be executed at once** (end-to-end).
+* **_end2end.sh Files (Workflow):** These scripts encapsulate the complete workflow and **can be executed at once** (end-to-end).
 
     To execute them:
     1.  **Grant execution permission:**
@@ -22,7 +22,7 @@ It also includes detailed instructions for the installation of all necessary sof
         ./gba_XXX_end2end.sh
         ```
 
-* **`_script.sh` Files (Modular Commands):** These files are collections of commands grouped by function (e.g., QC only, assembly only).
+* **_script.sh Files (Modular Commands):** These files are collections of commands grouped by function (e.g., QC only, assembly only).
 
     **⚠️ IMPORTANT: These scripts SHOULD NOT be executed in their entirety.**
 
@@ -32,33 +32,33 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ## 🛠️ The Short-Reads Genome Assembly Workflow
 
-## 1) Sequencing reads directory and files
-  ## Reads stored as local files
-  ## Reads from ENA or GenBank
-## 2) Raw reads quality assessment
-    ## FastQC
-    ## MultiQC
-## 3) Raw reads trimming and downsampling 
-    ## Fastp
-    ## Downsampling (KMC, GenomeScope and Rasusa)
-## 4) Trimmed reads quality assessment
-    ## FastQC
-    ## MultiQC
-## 5) De novo assembly
-    ## Unicycler
-    ## Shovill
-    ## SPAdes
-## 6) Organizing de novo assembly files
-## 7) Assembly quality assessment
-    ## CheckM2
-    ## GUNC
-    ## QUAST
-    ## Barrnap
-    ## Calculation of vertical sequencing coverage
-## 8) Taxonomic assignment
-    ## GTDB-Tk
-    ## TYGS (online)
-## 9) Plasmids identification
-    ## MOB-suite 
-## 10) Assignment of contigs to molecules
+### 1) Sequencing reads directory and files
+Reads stored as local files
+Reads from ENA or GenBank
+### 2) Raw reads quality assessment
+FastQC
+MultiQC
+### 3) Raw reads trimming and downsampling 
+Fastp
+Downsampling (KMC, GenomeScope and Rasusa)
+### 4) Trimmed reads quality assessment
+FastQC
+MultiQC
+### 5) De novo assembly
+Unicycler
+Shovill
+SPAdes
+### 6) Organizing de novo assembly files
+### 7) Assembly quality assessment
+CheckM2
+GUNC
+QUAST
+Barrnap
+Calculation of vertical sequencing coverage
+### 8) Taxonomic assignment
+GTDB-Tk
+TYGS (online)
+### 9) Plasmids identification
+MOB-suite 
+### 10) Assignment of contigs to molecules
 

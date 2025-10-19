@@ -591,44 +591,44 @@ for dir in 5_flye/*/; do
     cp "${dir}assembly.fasta" "6_assemblies/${sample}_flye.fasta"
 done
 
-############################################################
-## Assemblies from metaMDBG
+# ############################################################
+# ## Assemblies from metaMDBG
 
-# Loop through a list of directories
-for dir in 5_metamdbg/*/; do
-    # Extract directory name
-    dirname=${dir#*/}
-    # Extract sample name
-    sample=${dirname%%_metamdbg*}
-    # Copy and rename the assembly file
-    gunzip -c "${dir}contigs.fasta.gz" > "6_assemblies/${sample}_metamdbg.fasta"
-done
+# # Loop through a list of directories
+# for dir in 5_metamdbg/*/; do
+#     # Extract directory name
+#     dirname=${dir#*/}
+#     # Extract sample name
+#     sample=${dirname%%_metamdbg*}
+#     # Copy and rename the assembly file
+#     gunzip -c "${dir}contigs.fasta.gz" > "6_assemblies/${sample}_metamdbg.fasta"
+# done
 
-############################################################
-## Assemblies from myloasm 
+# ############################################################
+# ## Assemblies from myloasm 
 
-# Loop through a list of directories
-for dir in 5_myloasm/*/; do
-    # Extract directory name
-    dirname=${dir#*/}
-    # Extract sample name
-    sample=${dirname%%_myloasm*}
-    # Copy and rename the assembly file
-    cp "${dir}assembly_primary.fa" "6_assemblies/${sample}_myloasm.fasta"
-done
+# # Loop through a list of directories
+# for dir in 5_myloasm/*/; do
+#     # Extract directory name
+#     dirname=${dir#*/}
+#     # Extract sample name
+#     sample=${dirname%%_myloasm*}
+#     # Copy and rename the assembly file
+#     cp "${dir}assembly_primary.fa" "6_assemblies/${sample}_myloasm.fasta"
+# done
 
-############################################################
-## Assemblies from NextDenovo
+# ############################################################
+# ## Assemblies from NextDenovo
 
-# Loop through a list of directories
-for dir in 5_nextdenovo/*/; do
-    # Extract directory name
-    dirname=${dir#*/}
-    # Extract sample name
-    sample=${dirname%%_nextdenovo*}
-    # Copy and rename the assembly file
-    cp "${dir}/03.ctg_graph/nd.asm.fasta" "6_assemblies/${sample}_nextdenovo.fasta"
-done
+# # Loop through a list of directories
+# for dir in 5_nextdenovo/*/; do
+#     # Extract directory name
+#     dirname=${dir#*/}
+#     # Extract sample name
+#     sample=${dirname%%_nextdenovo*}
+#     # Copy and rename the assembly file
+#     cp "${dir}/03.ctg_graph/nd.asm.fasta" "6_assemblies/${sample}_nextdenovo.fasta"
+# done
 
 ############################################################
 ## Assemblies from Raven
@@ -644,10 +644,10 @@ zip -r 6_assemblies.zip 6_assemblies
 ## Delete the assemblers output directories
 
 rm -r 5_flye
-rm -r 5_metamdbg
-rm -r 5_myloasm
+# rm -r 5_metamdbg
+# rm -r 5_myloasm
+# rm -r 5_nextdenovo
 rm -r 5_raven
-rm -r 5_nextdenovo
 
 
 ############################################################

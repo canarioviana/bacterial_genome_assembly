@@ -1,54 +1,146 @@
 #!/bin/bash
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
+# Author: Marcus Vinicius Canário Viana
+# Date: 19/10/2025
+#
+# Instructions:
+#
 # Put this file on the working directory with the directory containning the sequencing reads (1_reads)
 # The sequencing reads names must be in the format samplename.fq.gz or samplename_*.fq.gz
 #
 # Execute the script using the command lines below
 # chmod +x bga_longreads_end2end.sh
 # ./bga_longreads_end2end.sh
-#
-# Author: Marcus Vinicius Canário Viana
-# Date: 18/10/2025
 
 
 ############################################################
 ## SUMMARY OF END-TO-END GENOME ASSEMBLY WORKFLOW FROM LONG-READS
 ############################################################
 
-## 0) Error handling and checking Conda installation
+## 0) Sequencing type, error handling and checking Conda installation
 ## 1) Sequencing reads directory and files
-  ## Reads stored as local files
+  # Reads stored as local files
 ## 2) Raw reads quality assessment
-    ## NanoPlot
-## 3) Raw reads trimming
-    ## Fastplong
+    # NanoPlot
+## 3) Raw reads trimming and estimation of genome size
+    # Fastplong
+    # Estimation of genome size (KMC and GenomeScope)
 ## 4) Trimmed reads quality assessment
     ## NanoPlot
 ## 5) De novo assembly
-    ## Flye
-    ## Unicycler
-    ## Raven
+    # Flye
+    # metaMDBG (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
+    # myloasm (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
+    # NextDenovo (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
+    # Raven
 ## 6) Organization of de novo assembly files
 ## 7) Assembly quality assessment
-    ## CheckM2
-    ## GUNC
-    ## QUAST
-    ## Barrnap
-    ## Calculation of vertical sequencing coverage
+    # CheckM2
+    # GUNC
+    # QUAST
+    # Barrnap
+    # Calculation of vertical sequencing coverage
 ## 8) Taxonomic assignment
-    ## GTDB-Tk
+    # GTDB-Tk
 ## 9) Plasmid identification
-    ## MOB-suite
+    # MOB-suite
 ## 10) Assignment of contigs to molecules
-    ## MOB-suite and an inhouse script
+    # MOB-suite and an inhouse script
+
 
 ############################################################
-## 0) Error handling and checking Conda installation
+## 0) Sequencing type, error handling and checking Conda installation
 ############################################################
+
+############################################################
+## Sequencing type
+
+# Access the sequencing type from the command line
+seq_type=$1
+
+# Valid options (based on Flye assembler)
+valid_options="--pacbio-raw | --pacbio-corr | --pacbio-hifi | --nano-raw | --nano-corr | --nano-hq"
+
+# Check if the argument was provided
+if [ -z "$seq_type" ]; then
+    echo "Error: You must provide the sequencing type."
+    echo "Options: --pacbio-raw | --pacbio-corr | --pacbio-hifi | --nano-raw | --nano-corr | --nano-hq"
+    echo "Usage: $0 <sequencing_type>"
+    exit 1
+fi
+
+# Check if the sequencing type argument was provided
+case "$seq_type" in
+    # Match against all valid options
+    --pacbio-raw|--pacbio-corr|--pacbio-hifi|--nano-raw|--nano-corr|--nano-hq)
+        # Argument is valid, now proceed with the script logic
+        echo "Valid sequencing type selected: $seq_type"
+        ;;
+    # Handle any other input
+    *)
+        echo "Error: '$seq_type' is not a valid sequencing type."
+        echo "Options: $valid_options"
+        exit 1
+        ;;
+esac
+
+# Adjust the sequencing type argument from Flye to metaMDBG
+# --in-hifi (Will be used in place of --pacbio-raw | --pacbio-corr | --pacbio-hifi)
+# --in-ont (Will be used in place of --nano-raw | --nano-corr | --nano-hq)
+case "$seq_type" in
+    # PacBio options
+    --pacbio-raw|--pacbio-corr|--pacbio-hifi)
+    seq_type_metamdbg="--in-hifi"
+        ;;
+
+    # Nanopore options
+    --nano-raw|--nano-corr|--nano-hq)
+        seq_type_metamdbg="--in-ont"
+        ;;
+esac
+
+# Adjust the sequencing type argument from Flye to myloasm
+# --nano-r10 (Will be used in place of --nano-hq)
+# --nano-r9 (Will be used in place of --nano-raw | --nano-corr )
+# --hifi (Will be used in place of --pacbio-corr | --pacbio-hifi)
+case "$seq_type" in
+    # PacBio options
+    --pacbio-raw|--pacbio-corr|--pacbio-hifi)
+    seq_type_myloasm="--hifi"
+        ;;
+        
+    # Nanopore options
+    --nano-raw|--nano-corr)
+        seq_type_myloasm="--nano-r9"
+        ;;
+    --nano-hq)
+        seq_type_myloasm="--nano-r10"
+        ;;
+esac
+
+# Adjust the sequencing type argument from Flye to NextDenovo
+# clr (Will be used in place of --pacbio-raw | --pacbio-corr)
+# hifi (Will be used in place of --pacbio-hifi)
+# ont (Will be used in place of --nano-raw | --nano-corr | --nano-hq)
+case "$seq_type" in
+    # PacBio options
+    --pacbio-raw|--pacbio-corr)
+    seq_type_nextdenovo="clr"
+        ;;
+    --pacbio-hifi)
+        seq_type_nextdenovo="hifi"
+        ;;
+
+    # Nanopore options
+    --nano-raw | --nano-corr | --nano-hq)
+        seq_type_nextdenovo="ont"
+        ;;
+esac
 
 ############################################################
 ## Error handling
+
 # Exit immediately if a command fails (returns a non-zero exit code)
 set -e
 # Ensure that a pipeline (command1 | command2) fails if any command in the pipe fails
@@ -56,6 +148,7 @@ set -o pipefail
 
 ############################################################
 ## Check if the 'conda' command is available on the system PATH
+
 if command -v conda &> /dev/null; then
     # Locate the base Conda installation path
     CONDA_BASE=$(conda info --base)
@@ -160,37 +253,9 @@ zip -r 2_nanoplot.zip 2_nanoplot
 # Delete the output directory
 rm -r 2_nanoplot
 
-############################################################
-## FastQC
-
-# Create an output directory
-mkdir 2_fastqc
-# Activate Conda environment
-conda activate fastqc
-# Run FastQC
-fastqc -t $(nproc --ignore=1) 1_reads/*.fq.gz -o 2_fastqc
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 2_fastqc.zip 2_fastqc
 
 ############################################################
-## FastQC -> MultiQC
-
-# Activate Conda environment
-conda activate multiqc
-# Run MultiQC
-multiqc 2_fastqc/*_fastqc.zip -o 2_fastqc_multiqc
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 2_fastqc_multiqc.zip 2_fastqc_multiqc
-# Delete the output directory
-rm -r 2_fastqc 2_fastqc_multiqc
-
-
-############################################################
-## 3) Raw reads trimming 
+## 3) Raw reads trimming and estimation of genome size
 ############################################################
 
 ############################################################
@@ -230,6 +295,78 @@ zip -r 3_fastplong.zip 3_fastplong/*.json 3_fastplong/*.html
 # Delete report files
 rm 3_fastplong/*.json 3_fastplong/*.html
 
+############################################################
+## Estimation of genome size
+
+# Create output directory
+mkdir 3_genomesize
+# Create output table file
+> 3_genomesize.tsv
+
+# Loop through a list of files
+for reads in 3_fastplong/*.fq.gz; do
+    # Extract file name
+    readsfilename=${reads##*/}
+    # Extract sample name
+    sample=${readsfilename%%_*}
+
+    # Create directory for the genome size estimation results
+    genomesizedir="3_genomesize/${sample}_genomesize"
+    mkdir ${genomesizedir}
+    
+    # Count k-mers using KMC
+    # Activate Conda environment
+    conda activate kmc
+    # Count k-mers
+    echo "Counting k-mers from the sequencing reads of sample ${sample}"
+    # Create kmc temporary directory
+    mkdir kmc_tmp
+    # Create kmc list of input read files
+    ls -1 ${reads} > kmc_input_reads.txt
+    kmc \
+    -t$(nproc --ignore=1) \
+    -k21 \
+    -m32 \
+    -ci1 \
+    -cs10000 \
+    @kmc_input_reads.txt \
+    kmc_count \
+    kmc_tmp
+    # Generate histogram for GenomeScope
+    echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
+    kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
+    # Deactivate Conda environment
+    conda activate base
+
+    # Estimate genome size using GenomeScope
+    # Activate Conda environment
+    conda activate genomescope
+    #Run software
+    echo "Estimating genome size of sample ${sample}"
+    genomescope2 \
+    -k 21 \
+    -i kmc_histogram.tsv \
+    -o "${genomesizedir}/genomescope"
+    # Deactivate Conda environment
+    conda activate base
+
+    # Get estimated genome size
+    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
+    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+    # Inform estimated genome size
+    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
+    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
+
+    # Move kmc temporary files to the genome size directory
+    mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+    # Delete the directory kmc_tmp
+    rm -r kmc_tmp
+
+    # Compress and delete output directory
+    zip -r 3_genomesize.zip 3_genomesize
+    rm -r 3_genomesize
+done
+
 
 ############################################################
 ## 4) Trimmed reads quality assessment
@@ -261,34 +398,6 @@ zip -r 4_nanoplot.zip 4_nanoplot
 # Delete the output directory
 rm -r 4_nanoplot
 
-############################################################
-## FastQC
-
-# Create an output directory
-mkdir 4_fastqc
-# Activate Conda environment
-conda activate fastqc
-# Run FastQC
-fastqc -t $(nproc --ignore=1) 3_fastplong/*.fq.gz -o 4_fastqc
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 4_fastqc.zip 4_fastqc
-
-############################################################
-## Fastp -> FastQC -> MultiQC
-
-# Activate Conda environment
-conda activate multiqc
-# Run MultiQC
-multiqc 4_fastqc/*_fastqc.zip -o 4_fastqc_multiqc
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 4_fastqc_multiqc.zip 4_fastqc_multiqc
-# Delete the output directory
-rm -r 4_fastqc 4_fastqc_multiqc 
-
 
 ############################################################
 ## 5) De novo assembly
@@ -299,6 +408,7 @@ rm -r 4_fastqc 4_fastqc_multiqc
 
 # Create an output directory
 mkdir 5_flye
+
 # Activate Conda environment
 conda activate flye
 # Loop through a list of files
@@ -310,7 +420,7 @@ for reads in 3_fastplong/*.fq.gz; do
     # Run Flye
     echo "Assembling the genome of sample: $sample"
     flye -t $(nproc --ignore=1) \
-    --pacbio-corr \
+    "${seq_type}" \
     "$reads" \
     -o 5_flye/"$sample"_flye
 done
@@ -319,31 +429,116 @@ conda activate base
 # Compress output files
 zip -r 5_flye.zip 5_flye
 
-############################################################
-## Unicycler (only for prokaryotic genomes)
+# ############################################################
+# ## metaMDBG (for metagenomes)
+# # conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
 
-# Create an output directory
-mkdir 5_unicycler
-# Activate Conda environment
-conda activate unicycler
-# Loop through a list of files
-for reads in 3_fastplong/*.fq.gz; do
-    # Extract reads file name
-    readsfilename=${reads##*/}
-    # Extract sample name
-    sample=${readsfilename%%_*}
-    # Run Unicycler
-    unicycler \
-    -t $(nproc --ignore=1) \
-    --spades_options "--cov-cutoff auto" \
-    --min_fasta_length 200 \
-    -l "$reads" \
-    -o "5_unicycler/${sample}_unicycler"
-done
-# Deactivate Conda environment
-conda activate base
-# Compress the output directory
-zip -r 5_unicycler.zip 5_unicycler
+# # Create an output directory
+# mkdir 5_metamdbg
+# # Activate Conda environment
+# conda activate metamdbg
+# # Loop through a list of files
+# for reads in 3_fastplong/*.fq.gz; do
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*}
+#     # Run metaMDBG
+#     echo "metaMDBG is assembling the genome of sample: $sample"
+#     metaMDBG asm \
+#     --threads $(nproc --ignore=1) \
+#     "$seq_type_metamdbg" "$reads" \
+#     --out-dir "5_metamdbg/${sample}_metamdbg"
+# done
+# # Deactivate Conda environment
+# conda activate base
+# # Compress the output directory
+# zip -r 5_metamdbg.zip 5_metamdbg
+
+# ############################################################
+# ## myloasm
+# # conda create -n myloasm -c bioconda myloasm -y
+
+# # Create an output directory
+# mkdir 5_myloasm
+# # Activate Conda environment
+# conda activate myloasm
+# # Loop through a list of files
+# for reads in 3_fastplong/*.fq.gz; do
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*}
+#     # Run Myloasm
+#     echo "Myloasm is assembling the genome of sample: $sample"
+#     myloasm \
+#     -t $(nproc --ignore=1) \
+#     -o "5_myloasm/${sample}_myloasm" \
+#     "$reads" "$seq_type_myloasm"
+# done
+# # Deactivate Conda environment
+# conda activate base
+# # Compress the output directory
+# zip -r 5_myloasm.zip 5_myloasm
+
+# ############################################################
+# ## NextDenovo
+# # conda create -n nextdenovo -c bioconda nextdenovo -y
+# # Create an output directory
+# mkdir 5_nextdenovo
+
+# # Activate Conda environment
+# conda activate nextdenovo
+# # Loop through a list of files
+# for reads in 3_fastplong/*.fq.gz; do
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*}
+
+#     # Create output directory
+#     working_dir="5_nextdenovo/${sample}_nextdenovo"
+#     mkdir "${working_dir}"
+
+#     #Get estimated genome size from file 5_genomesize.tsv
+#     genomesize_pb=$(awk -F '\t' -v target="${sample}" '$1 == target {print $2; exit}' "3_genomesize.tsv")
+#     genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+    
+#     # Create list of input files
+#     #reads_list="$PWD/5_nextdenovo/${sample}_nextdenovo/${sample}.fofn"
+#     #ls "$PWD/$reads" > ${reads_list}
+#     reads_list="${sample}.fofn"
+#     ls "$reads" > ${reads_list}
+#     # Create run.cfg
+#     #config_file="5_nextdenovo/${sample}_nextdenovo/${sample}.cfg"
+#     config_file="${sample}.cfg"
+#     find $CONDA_PREFIX -path "*/doc/run.cfg" -type f \
+#     -exec cp {} ./"${config_file}" \; -quit
+
+#     # Edit prefix
+#     sed -i "s|^job_prefix =.*|job_prefix = ${sample}|" "${config_file}"
+#     # Edit number of parallel jobs
+#     sed -i "s|^parallel_jobs =.*|parallel_jobs = $(nproc --ignore=1)|" "${config_file}"
+#     # Edit input_type: raw, corrected
+#     sed -i "s|^input_type =.*|input_type = raw|" "${config_file}"
+#     # Edit read type: clr, ont, hifi
+#     sed -i "s|^read_type =.*|read_type = $seq_type_nextdenovo|" "${config_file}"
+#     # Edit list of input files
+#     sed -i "s|^input_fofn =.*|input_fofn = ${reads_list}|" "${config_file}"
+#     # Edit working directory
+#     sed -i "s|^workdir =.*|workdir = ${working_dir}|" "${config_file}"
+#     # Edit estimated genome size
+#     sed -i "s|^genome_size =.*|genome_size = ${genomesize_mb}m|" "${config_file}"
+#     # Run NextDenovo
+#     echo "NextDenovo is assembling the genome of sample: $sample"
+#     nextDenovo "${config_file}"
+#     # Move log file
+#     mv pid* ${sample}.fofn ${sample}.cfg "${working_dir}"
+# done
+# # Deactivate Conda environment
+# conda activate base
+# # Compress the output directory
+# zip -r 5_nextdenovo.zip 5_nextdenovo
 
 ############################################################
 ## Raven
@@ -360,7 +555,7 @@ for reads in 3_fastplong/*.fq.gz; do
     sample=${readsfilename%%_*}
     # Create output directory
     mkdir "5_raven/${sample}_raven"
-    # Run Unicycler
+    # Run Raven
     echo "Raven is assembling the genome of sample: $sample"
     raven \
     -t $(nproc --ignore=1) \
@@ -388,8 +583,6 @@ mkdir 6_assemblies
 
 # Loop through a list of directories
 for dir in 5_flye/*/; do
-    # Extract sample name from directory name
-    # sample=$(basename "$directory" _flye)
     # Extract directory name
     dirname=${dir#*/}
     # Extract sample name
@@ -399,18 +592,42 @@ for dir in 5_flye/*/; do
 done
 
 ############################################################
-## Assemblies from Unicycler
+## Assemblies from metaMDBG
 
 # Loop through a list of directories
-for dir in 5_unicycler/*/; do
-    # Extract sample name from directory name
-    # sample=$(basename "$directory" _unicycler)
+for dir in 5_metamdbg/*/; do
     # Extract directory name
     dirname=${dir#*/}
     # Extract sample name
-    sample=${dirname%%_unicycler*}
+    sample=${dirname%%_metamdbg*}
     # Copy and rename the assembly file
-    cp "${dir}assembly.fasta" "6_assemblies/${sample}_unicycler.fasta"
+    gunzip -c "${dir}contigs.fasta.gz" > "6_assemblies/${sample}_metamdbg.fasta"
+done
+
+############################################################
+## Assemblies from myloasm 
+
+# Loop through a list of directories
+for dir in 5_myloasm/*/; do
+    # Extract directory name
+    dirname=${dir#*/}
+    # Extract sample name
+    sample=${dirname%%_myloasm*}
+    # Copy and rename the assembly file
+    cp "${dir}assembly_primary.fa" "6_assemblies/${sample}_myloasm.fasta"
+done
+
+############################################################
+## Assemblies from NextDenovo
+
+# Loop through a list of directories
+for dir in 5_nextdenovo/*/; do
+    # Extract directory name
+    dirname=${dir#*/}
+    # Extract sample name
+    sample=${dirname%%_nextdenovo*}
+    # Copy and rename the assembly file
+    cp "${dir}/03.ctg_graph/nd.asm.fasta" "6_assemblies/${sample}_nextdenovo.fasta"
 done
 
 ############################################################
@@ -427,8 +644,10 @@ zip -r 6_assemblies.zip 6_assemblies
 ## Delete the assemblers output directories
 
 rm -r 5_flye
-rm -r 5_unicycler
+rm -r 5_metamdbg
+rm -r 5_myloasm
 rm -r 5_raven
+rm -r 5_nextdenovo
 
 
 ############################################################

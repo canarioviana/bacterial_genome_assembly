@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 18/10/2025
+# Date: 19/10/2025
 # More info: see README.md in the repository
 
 
@@ -14,33 +14,33 @@
 ############################################################
 
 ## 1) Sequencing reads directory and files
-  ## Reads stored as local files
-  ## Reads from ENA or GenBank
+  # Reads stored as local files
+  # Reads from ENA or GenBank
 ## 2) Raw reads quality assessment
-    ## FastQC
-    ## MultiQC
-## 3) Raw reads trimming and downsampling 
-    ## Fastp
-    ## Downsampling (KMC, GenomeScope and Rasusa)
+    # FastQC
+    # MultiQC
+## 3) Raw reads trimming, estimation of genome size and downsampling 
+    # Fastp
+    # Estimation of genome size (KMC and GenomeScope) and downsampling (Rasusa)
 ## 4) Trimmed reads quality assessment
-    ## FastQC
-    ## MultiQC
+    # FastQC
+    # MultiQC
 ## 5) De novo assembly
-    ## Unicycler
-    ## Shovill
-    ## SPAdes
+    # Unicycler
+    # Shovill
+    # SPAdes
 ## 6) Organizing de novo assembly files
 ## 7) Assembly quality assessment
-    ## CheckM2
-    ## GUNC
-    ## QUAST
-    ## Barrnap
-    ## Calculation of vertical sequencing coverage
+    # CheckM2
+    # GUNC
+    # QUAST
+    # Barrnap
+    # Calculation of vertical sequencing coverage
 ## 8) Taxonomic assignment
-    ## GTDB-Tk
-    ## TYGS (online)
+    # GTDB-Tk
+    # TYGS (online)
 ## 9) Plasmids identification
-    ## MOB-suite 
+    # MOB-suite 
 ## 10) Assignment of contigs to molecules
 
 
@@ -126,7 +126,7 @@ rm -r 2_fastqc 2_fastqc_multiqc
 
 
 ############################################################
-## 3) Raw reads trimming and downsampling 
+## 3) Raw reads trimming, estimation of genome size and downsampling 
 ############################################################
 
 ############################################################
@@ -178,6 +178,9 @@ rm 3_fastp/*.json 3_fastp/*.html
 
 # Required coverage
 coverage=100
+
+# Create output table file
+> 3_genomesize.tsv
 
 # Loop through a list of files
 for r1 in 3_fastp/*_trimmed_1.fq.gz; do
@@ -232,7 +235,8 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
     genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
     # Inform estimated genome size
-    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
+    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
+    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}

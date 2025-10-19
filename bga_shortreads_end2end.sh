@@ -9,7 +9,7 @@
 # ./bga_shortreads_end2end.sh
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 18/10/2025
+# Date: 19/10/2025
 
 
 ############################################################
@@ -18,29 +18,29 @@
 
 ## 0) Error handling and checking Conda installation
 ## 1) Sequencing reads directory and files
-  ## Reads stored as local files
+    # Reads stored as local files
 ## 2) Raw reads quality assessment
-    ## FastQC
-    ## MultiQC
-## 3) Raw reads trimming and downsampling
-    ## Fastp
-    ## Downsampling (KMC, GenomeScope and Rasusa)
+    # FastQC
+    # MultiQC
+## 3) Raw reads trimming, estimation of genome size and downsampling 
+    # Fastp
+    # Estimation of genome size (KMC and GenomeScope) and downsampling (Rasusa)
 ## 4) Trimmed reads quality assessment
-    ## FastQC
-    ## MultiQC
+    # FastQC
+    # MultiQC
 ## 5) De novo assembly
-    ## Unicycler
+    # Unicycler
 ## 6) Organization of de novo assembly files
 ## 7) Assembly quality assessment
-    ## CheckM2
-    ## GUNC
-    ## QUAST
-    ## Barrnap
-    ## Calculation of vertical sequencing coverage
+    # CheckM2
+    # GUNC
+    # QUAST
+    # Barrnap
+    # Calculation of vertical sequencing coverage
 ## 8) Taxonomic assignment
-    ## GTDB-Tk
+    # GTDB-Tk
 ## 9) Plasmid identification
-    ## MOB-suite 
+    # MOB-suite 
 ## 10) Assignment of contigs to molecules
 
 
@@ -74,10 +74,43 @@ fi
 ############################################################
 
 ############################################################
-## Reads stored as local files
+## Reads from ENA or GenBank
+
+# Verify the presence of the file 1_reads.tsv with a list of accessions
+if [ -f 1_reads.tsv ]; then
+    echo "The file 1_reads.tsv was found. The sequencing reads will be downloaded"
+
+    # Create output directory 
+    mkdir -p 1_reads
+
+    # Fastq-dl
+    # Activate Conda environment
+    conda activate fastq-dl
+    # Loop through file lines
+    while IFS=$'\t' read -r -a column; do
+        accession=${column[0]}
+        sample=${column[1]}
+        if [ ! -f "1_reads/${sample}_1.fq.gz" ] && [ ! -f "1_reads/${sample}_2.fq.gz" ]; then
+            echo "Downloading sample: $sample (accession: $accession)"
+            # Run fastq-dl
+            fastq-dl --outdir 1_reads --prefix "$sample" -a "$accession"
+            # Rename files
+            mv "1_reads/${accession}_1.fastq.gz" "1_reads/${sample}_1.fq.gz"
+            mv "1_reads/${accession}_2.fastq.gz" "1_reads/${sample}_2.fq.gz"
+        else
+            echo "Sample $sample files found. Skiping donwload."
+        fi
+    done < 1_reads.tsv
+    echo "Download process complete. Deactivating the environment."
+    # Deactivate Conda environment
+    conda activate base
+
+else
+    echo "The file 1_reads.tsv was not found. Proceeding using local sequencing reads files."
+fi
 
 ############################################################
-## Checking reads directory
+## Reads stored as local files
 
 # Checking wether the directory 1_reads exists
 if [ ! -d 1_reads ]; then
@@ -86,8 +119,7 @@ if [ ! -d 1_reads ]; then
     exit 1
 fi
 
-############################################################
-## Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
+# Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
 
 # Checking the presence of files in the format 1_reads/*_R1_001.fastq.gz
 if ls 1_reads/*_R1_001.fastq.gz > /dev/null 2>&1; then
@@ -108,7 +140,6 @@ else
     :
 fi
 
-############################################################
 ## Checking the presence, names and pairing of the input files
 files_found=0
 missing_pairs=0
@@ -183,7 +214,7 @@ rm -r 2_fastqc 2_fastqc_multiqc
 
 
 ############################################################
-## 3) Raw reads trimming and downsampling 
+## 3) Raw reads trimming, estimation of genome size and downsampling 
 ############################################################
 
 ############################################################
@@ -231,10 +262,13 @@ zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
 rm 3_fastp/*.json 3_fastp/*.html
 
 ############################################################
-## Downsampling (KMC, GenomeScope and Rasusa)
+## Estimation of genome size (KMC, GenomeScope) and downsampling  (Rasusa)
 
 # Required coverage
 coverage=100
+
+# Create output table file
+> 3_genomesize.tsv
 
 # Loop through a list of files
 for r1 in 3_fastp/*_trimmed_1.fq.gz; do
@@ -289,7 +323,8 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
     genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
     # Inform estimated genome size
-    echo "Estimaged genome size of sample ${sample}: ${genomesize_mb}Mb"
+    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
+    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}

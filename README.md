@@ -10,14 +10,13 @@ It also includes detailed instructions for the installation of all necessary sof
 
 * The scripts provide comprehensive **software installation instructions**, **a worfkflow for genome assembly with guidelines for genome and sequencing reads submission** and **a worfkflow for genome annotation**
 
-* **_end2end.sh Files (Workflow):** These scripts encapsulate the complete workflow and **can be executed at once** (end-to-end).
-
-    To execute them:
-    1.  **Grant execution permission:**
+* **_end2end.sh Files (Workflow):** These scripts encapsulate the complete workflow and **can be executed at once** (end-to-end). To execute them:
+    
+    * **Grant execution permission:**
         ```bash
         chmod +x gba_XXX_end2end.sh
         ```
-    2.  **Run the script:**
+    * **Run the script:**
         ```bash
         ./gba_XXX_end2end.sh
         ```
@@ -32,69 +31,65 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ## 🛠️ The Short-Reads Genome Assembly Workflow
 
-### 1) Sequencing reads directory and files
+1) Sequencing reads directory and files
 * Reads stored as local files
 * Reads from ENA or GenBank
-### 2) Raw reads quality assessment
+2) Raw reads quality assessment
 * FastQC
 * MultiQC
-### 3) Raw reads trimming and downsampling 
+3) Raw reads trimming, estimation of genome size and downsampling
 * Fastp
-* Downsampling (KMC, GenomeScope and Rasusa)
-### 4) Trimmed reads quality assessment
+* Estimation of genome size (KMC and GenomeScope) and downsampling (Rasusa)
+4) Trimmed reads quality assessment
 * FastQC
 * MultiQC
-### 5) De novo assembly
+5) De novo assembly
 * Unicycler
 * Shovill
 * SPAdes
-### 6) Organizing de novo assembly files
-### 7) Assembly quality assessment
+6) Organizing de novo assembly files
+7) Assembly quality assessment
 * CheckM2
 * GUNC
 * QUAST
 * Barrnap
 * Calculation of vertical sequencing coverage
-### 8) Taxonomic assignment
+8) Taxonomic assignment
 * GTDB-Tk
 * TYGS (online)
-### 9) Plasmids identification
+9) Plasmids identification
 * MOB-suite 
-### 10) Assignment of contigs to molecules
+10) Assignment of contigs to molecules
 * MOB-suite and an inhouse script
 
 ---
 
 ## 🛠️ The Long-Reads Genome Assembly Workflow
 
-### 1) Sequencing reads directory and files
+1) Sequencing reads directory and files
 * Reads stored as local files
-### 2) Raw reads quality assessment
+2) Raw reads quality assessment
 * NanoPlot
-* FastQC
-* MultiQC
-### 3) Raw reads trimming and downsampling 
+3) Raw reads trimming and estimation of genome size
 * Fastplong
-### 4) Trimmed reads quality assessment
+* Estimation of genome size (KMC and GenomeScope)
+4) Trimmed reads quality assessment
 * NanoPlot
-* FastQC
-* MultiQC
-### 5) De novo assembly
+5) De novo assembly
 * Flye
-* Unicycler
 * Raven
-### 6) Organizing de novo assembly files
-### 7) Assembly quality assessment
+6) Organization of de novo assembly files
+7) Assembly quality assessment
 * CheckM2
 * GUNC
 * QUAST
 * Barrnap
 * Calculation of vertical sequencing coverage
-### 8) Taxonomic assignment
+8) Taxonomic assignment
 * GTDB-Tk
 * TYGS (online)
-### 9) Plasmids identification
+9) Plasmids identification
 * MOB-suite 
-### 10) Assignment of contigs to molecules
+10) Assignment of contigs to molecules
 * MOB-suite and an inhouse script
 

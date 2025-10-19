@@ -23,73 +23,73 @@ It also includes detailed instructions for the installation of all necessary sof
 
 * **_script.sh Files (Modular Commands):** These files are collections of commands grouped by function (e.g., QC only, assembly only).
 
-    **⚠️ IMPORTANT: These scripts SHOULD NOT be executed in their entirety.**
+    * **⚠️ IMPORTANT: These scripts SHOULD NOT be executed in their entirety.**
 
-    Instead, you should copy (or modify) and paste the relevant command lines directly into your Linux terminal as needed for modular use.
+    * Instead, you should copy (or modify) and paste the relevant command lines directly into your Linux terminal as needed for modular use.
 
 ---
 
 ## 🛠️ The Short-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
-* Reads stored as local files
-* Reads from ENA or GenBank
+    * Reads stored as local files
+    * Reads from ENA or GenBank
 2) Raw reads quality assessment
-* FastQC
-* MultiQC
+    * FastQC
+    * MultiQC
 3) Raw reads trimming, estimation of genome size and downsampling
-* Fastp
-* Estimation of genome size (KMC and GenomeScope) and downsampling (Rasusa)
+    * Fastp
+    * Estimation of genome size (KMC and GenomeScope) and downsampling (Rasusa)
 4) Trimmed reads quality assessment
-* FastQC
-* MultiQC
+    * FastQC
+    * MultiQC
 5) De novo assembly
-* Unicycler
-* Shovill
-* SPAdes
+    * Unicycler
+    * Shovill
+    * SPAdes
 6) Organizing de novo assembly files
 7) Assembly quality assessment
-* CheckM2
-* GUNC
-* QUAST
-* Barrnap
-* Calculation of vertical sequencing coverage
+    * CheckM2
+    * GUNC
+    * QUAST
+    * Barrnap
+    * Calculation of vertical sequencing coverage
 8) Taxonomic assignment
-* GTDB-Tk
-* TYGS (online)
+    * GTDB-Tk
+    * TYGS (online)
 9) Plasmids identification
-* MOB-suite 
+    * MOB-suite 
 10) Assignment of contigs to molecules
-* MOB-suite and an inhouse script
+    * MOB-suite and an inhouse script
 
 ---
 
 ## 🛠️ The Long-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
-* Reads stored as local files
+    * Reads stored as local files
 2) Raw reads quality assessment
-* NanoPlot
+    * NanoPlot
 3) Raw reads trimming and estimation of genome size
-* Fastplong
-* Estimation of genome size (KMC and GenomeScope)
+    * Fastplong
+    * Estimation of genome size (KMC and GenomeScope)
 4) Trimmed reads quality assessment
-* NanoPlot
+    * NanoPlot
 5) De novo assembly
-* Flye
-* Raven
+    * Flye
+    * Raven
 6) Organization of de novo assembly files
 7) Assembly quality assessment
-* CheckM2
-* GUNC
-* QUAST
-* Barrnap
-* Calculation of vertical sequencing coverage
+    * CheckM2
+    * GUNC
+    * QUAST
+    * Barrnap
+    * Calculation of vertical sequencing coverage
 8) Taxonomic assignment
-* GTDB-Tk
-* TYGS (online)
+    * GTDB-Tk
+    * TYGS (online)
 9) Plasmids identification
-* MOB-suite 
+    * MOB-suite 
 10) Assignment of contigs to molecules
-* MOB-suite and an inhouse script
+    * MOB-suite and an inhouse script
 

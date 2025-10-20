@@ -33,7 +33,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 1) Sequencing reads directory and files
     * Download reads from NCBI SRA (SRA Tools)
-    * Check local reads files
+    * Check local read files
 2) Raw reads quality assessment
     * FastQC
     * MultiQC
@@ -68,7 +68,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 1) Sequencing reads directory and files
     * Download reads from NCBI SRA (SRA Tools)
-    * Check local reads files
+    * Check local read files
 2) Raw reads quality assessment
     * NanoPlot
 3) Raw reads trimming and estimation of genome size
@@ -93,4 +93,5 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an inhouse script
+
 

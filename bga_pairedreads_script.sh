@@ -13,10 +13,10 @@
 #
 # **B. Downloading Reads from NCBI SRA**
 #
-# 1. Create a **tab-separated file** named **"1_reads.tsv"**.
-# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column.
+# 1. Create a **tab-separated file** named **"1_reads_accessions.tsv"**.
+# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column. Other columns will be ignored.
 # 3. **Do not use** special characters in the sample names.
-# 4. Place the **"1_reads.tsv"** file in the working directory.
+# 4. Place the **"1_reads_accessions.tsv"** file in the working directory.
 #
 # **C. Execution**
 # ⚠️ DO NOT execute this script entirely at once!
@@ -80,43 +80,78 @@ sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/
 ############################################################
 ## Reads from NCBI SRA
 
-# Create the tab-separated file "1_reads.tsv" containing the GenBank SRA or ENA accession number in the first column and the sample name in the second 
+# Delete previous file of not used reads
+rm -f 1_reads_single-end.tsv
 
-# Create the reads directory
-mkdir 1_reads
+# Verify the presence of the file 1_reads_accessions.tsv with a list of accessions
+if [ -f 1_reads_accessions.tsv ]; then
+    echo "The file 1_reads_accessions.tsv was found. The sequencing reads will be downloaded."
 
-# SRA Tools
-# Activate Conda environment
-conda activate sra-tools
-# Loop through file lines
-while IFS=$'\t' read -r accession sample others; do
-    if [ ! -f "1_reads/${sample}_1.fq.gz" ] && [ ! -f "1_reads/${sample}_2.fq.gz" ]; then
-        echo "Downloading sample: $sample (accession: $accession)"
-        
-        # Run prefetch
-        prefetch -p -O 1_reads "${accession}"
+    # Create output directory 
+    mkdir -p 1_reads
 
-        # Run fasterq-dump
-        cd 1_reads
-        fasterq-dump \
-        --threads $(nproc --ignore=1) \
-        -p \
-        --split-files "${accession}" \
-        -O .
-        # Delete temporary directories
-        rm -r "${accession}"
-        # Compress files
-        echo "Compressing fastq files"
-        pigz -p $(nproc --ignore=1) ${accession}*.fastq
-        # Rename files
-        echo "Renaming files"
-        mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
-        mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
-        cd ..
-    else
-        echo "Sample $sample files found. Skipping download."
-    fi
-done < 1_reads.tsv
+    # SRA Tools
+    # Activate Conda environment
+    conda activate sra-tools
+
+    # Loop through file lines
+    while IFS=$'\t' read -r accession sample others; do
+        if [ -f "1_reads/${sample}_1.fq.gz" ] && [ -f "1_reads/${sample}_2.fq.gz" ]; then
+            echo "Sample $sample paired files found. Skipping download."
+        elif [ -f "1_reads/${sample}.fq.gz" ]; then
+            echo "Sample $sample single-end file found. Skipping download."
+        else
+            echo "Downloading sample: $sample (accession: $accession)"
+
+            # Remove any incomplete files
+            rm -f "1_reads/${sample}_1.fq.gz" "1_reads/${sample}_2.fq.gz" "1_reads/${sample}.fq.gz"    
+            
+            # Run prefetch
+            prefetch -p -O 1_reads "${accession}"
+
+            # Run fasterq-dump
+            cd 1_reads
+            fasterq-dump \
+            --threads $(nproc --ignore=1) \
+            -p \
+            --split-files "${accession}" \
+            -O .
+            # Delete temporary directories
+            rm -r "${accession}"
+            # Compress files
+            echo "Compressing fastq files."
+            pigz -p $(nproc --ignore=1) ${accession}*.fastq
+
+            # Check if the reads are paired-end
+            if [ -f "${accession}_1.fastq.gz" ] && [ -f "${accession}_2.fastq.gz" ];  then
+                echo "Sample ${sample} has paired-end reads."
+                # Rename files
+                echo "Renaming files."
+                mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
+                mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
+                # Go back to main directory
+                cd ..
+            # Check if the reads are not paired-end
+            elif [ -f "${accession}.fastq.gz" ]; then
+                echo "Sample ${sample} has single-end reads."
+                # Renaming file
+                echo "Renaming file."
+                mv "${accession}.fastq.gz" "${sample}.fq.gz"
+                # Warning about the requirement of paired-reads
+                echo "Warning: this script only use paired-end reads. This file will not be used." 
+                # Create list of not used read files
+                echo -e "${accession}\t${sample}.fq.gz" >> ../1_reads_single-end.tsv
+                # Go back to main directory
+                cd ..
+            fi
+        fi
+    done < 1_reads_accessions.tsv
+    echo "Download process complete. Deactivating the environment."
+    # Deactivate Conda environment
+    conda activate base
+else
+    echo "The file 1_reads_accessions.tsv was not found. Proceeding using local files."
+fi
 
 
 ############################################################

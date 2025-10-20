@@ -2,16 +2,22 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 19/10/2025
+# Date: 20/10/2025
+# More info: see README.md in the repository
 #
 # Instructions:
 #
-# Put this file on the working directory with the directory containning the sequencing reads (1_reads)
-# The sequencing reads names must be in the format samplename.fq.gz or samplename_*.fq.gz
+# **A. Using Local Read Files**
 #
-# Execute the script using the command lines below
-# chmod +x bga_longreads_end2end.sh
-# ./bga_longreads_end2end.sh
+# 1. Standardize the paired-end file names of each sample to samplename.fq.gz or samplename_*.fq.gz
+# 2. In the working directory, create the directory **1_reads** and place the read files **inside it**.
+# 
+# **B. Execution**
+#
+# Place this script (**bga_longreads_end2end.sh**) in the working directory and execute it **using the following commands**:
+# chmod +x bga_longreads_end2end.sh 
+# ./bga_longreads_end2end.sh <sequencing_type>
+# Valid options for sequencing type: --pacbio-raw | --pacbio-corr | --pacbio-hifi | --nano-raw | --nano-corr | --nano-hq
 
 
 ############################################################
@@ -431,7 +437,6 @@ zip -r 5_flye.zip 5_flye
 
 # ############################################################
 # ## metaMDBG (for metagenomes)
-# # conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
 
 # # Create an output directory
 # mkdir 5_metamdbg
@@ -457,7 +462,6 @@ zip -r 5_flye.zip 5_flye
 
 # ############################################################
 # ## myloasm
-# # conda create -n myloasm -c bioconda myloasm -y
 
 # # Create an output directory
 # mkdir 5_myloasm
@@ -483,7 +487,7 @@ zip -r 5_flye.zip 5_flye
 
 # ############################################################
 # ## NextDenovo
-# # conda create -n nextdenovo -c bioconda nextdenovo -y
+
 # # Create an output directory
 # mkdir 5_nextdenovo
 

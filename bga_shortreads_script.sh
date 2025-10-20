@@ -1,12 +1,28 @@
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
+# Author: Marcus Vinicius Canário Viana
+# Date: 20/10/2025
+# More info: see README.md in the repository
+#
+# Instructions:
+#
+# **A. Using Local Read Files**
+#
+# 1. Standardize the paired-end file names of each sample to **samplename_1.fq.gz** and **samplename_2.fq.gz**.
+# 2. In the working directory, create the directory **1_reads** and place the read files **inside it**.
+#
+# **B. Downloading Reads from NCBI SRA**
+#
+# 1. Create a **tab-separated file** named **"1_reads.tsv"**.
+# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column.
+# 3. **Do not use** special characters in the sample names.
+# 4. Place the **"1_reads.tsv"** file in the working directory.
+#
+# **C. Execution**
 # ⚠️ DO NOT execute this script entirely at once!
 # Copy and paste individual command lines into the Linux terminal as needed.
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
-#
-# Author: Marcus Vinicius Canário Viana
-# Date: 19/10/2025
-# More info: see README.md in the repository
+
 
 
 ############################################################
@@ -14,8 +30,8 @@
 ############################################################
 
 ## 1) Sequencing reads directory and files
-  # Reads stored as local files
-  # Reads from ENA or GenBank
+    # Local reads files
+    # Download reads from NCBI SRA (sra-tools)
 ## 2) Raw reads quality assessment
     # FastQC
     # MultiQC
@@ -62,33 +78,44 @@ rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/
 sed -i 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.md5
 
 ############################################################
-## Reads from ENA or GenBank
+## Reads from NCBI SRA
 
 # Create the tab-separated file "1_reads.tsv" containing the GenBank SRA or ENA accession number in the first column and the sample name in the second 
+
 # Create the reads directory
 mkdir 1_reads
 
-## Fastq-dl
+# SRA Tools
 # Activate Conda environment
-conda activate fastq-dl
+conda activate sra-tools
 # Loop through file lines
-while IFS=$'\t' read -r -a column; do
-  accession=${column[0]}
-  sample=${column[1]}
-  echo "Downloading sample: $sample (accession: $accession)"
-  # Run fastq-dl
-  fastq-dl --outdir 1_reads --prefix "$sample" -a "$accession"
-done < 1_reads.tsv
-echo "Download process complete. Deactivating the environment."
-# Deactivate Conda environment
-conda activate base
-# Rename files
-while IFS=$'\t' read -r -a column; do
-  echo "Renaming files"
-  accession=${column[0]}
-  sample=${column[1]}
-  mv "1_reads/${accession}_1.fastq.gz" "1_reads/${sample}_1.fq.gz"
-  mv "1_reads/${accession}_2.fastq.gz" "1_reads/${sample}_2.fq.gz"
+while IFS=$'\t' read -r accession sample others; do
+    if [ ! -f "1_reads/${sample}_1.fq.gz" ] && [ ! -f "1_reads/${sample}_2.fq.gz" ]; then
+        echo "Downloading sample: $sample (accession: $accession)"
+        
+        # Run prefetch
+        prefetch -p -O 1_reads "${accession}"
+
+        # Run fasterq-dump
+        cd 1_reads
+        fasterq-dump \
+        --threads $(nproc --ignore=1) \
+        -p \
+        --split-files "${accession}" \
+        -O .
+        # Delete temporary directories
+        rm -r "${accession}"
+        # Compress files
+        echo "Compressing fastq files"
+        pigz -p $(nproc --ignore=1) ${accession}*.fastq
+        # Rename files
+        echo "Renaming files"
+        mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
+        mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
+        cd ..
+    else
+        echo "Sample $sample files found. Skipping download."
+    fi
 done < 1_reads.tsv
 
 

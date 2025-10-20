@@ -1,15 +1,29 @@
 #!/bin/bash
-# Bash script for bacterial genome assembly from short-read sequencing data
-#
-# Put this file on the working directory with the directory containning the sequencing reads (1_reads)
-# The sequencing reads names must be in the format samplename_1.fq.gz and samplename_2.fq.gz
-#
-# Execute the script using the command lines below
-# chmod +x bga_shortreads_end2end.sh
-# ./bga_shortreads_end2end.sh
+# Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 19/10/2025
+# Date: 20/10/2025
+# More info: see README.md in the repository
+#
+# Instructions:
+#
+# **A. Using Local Read Files**
+#
+# 1. Standardize the paired-end file names of each sample to **samplename_1.fq.gz** and **samplename_2.fq.gz**.
+# 2. In the working directory, create the directory **1_reads** and place the read files **inside it**.
+#
+# **B. Downloading Reads from NCBI SRA**
+#
+# 1. Create a **tab-separated file** named **"1_reads.tsv"**.
+# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column.
+# 3. **Do not use** special characters in the sample names.
+# 4. Place the **"1_reads.tsv"** file in the working directory.
+#
+# **C. Execution**
+#
+# Place this script (**bga_shortreads_end2end.sh**) in the working directory and execute it **using the following commands**:
+# chmod +x bga_shortreads_end2end.sh
+# ./bga_shortreads_end2end.sh
 
 
 ############################################################
@@ -18,7 +32,8 @@
 
 ## 0) Error handling and checking Conda installation
 ## 1) Sequencing reads directory and files
-    # Reads stored as local files
+    # Download reads from NCBI SRA (sra-tools)
+    # Check local reads files
 ## 2) Raw reads quality assessment
     # FastQC
     # MultiQC
@@ -74,7 +89,7 @@ fi
 ############################################################
 
 ############################################################
-## Reads from ENA or GenBank
+## Reads from NCBI SRA
 
 # Verify the presence of the file 1_reads.tsv with a list of accessions
 if [ -f 1_reads.tsv ]; then
@@ -83,28 +98,41 @@ if [ -f 1_reads.tsv ]; then
     # Create output directory 
     mkdir -p 1_reads
 
-    # Fastq-dl
+    # SRA Tools
     # Activate Conda environment
-    conda activate fastq-dl
+    conda activate sra-tools
     # Loop through file lines
-    while IFS=$'\t' read -r -a column; do
-        accession=${column[0]}
-        sample=${column[1]}
+    while IFS=$'\t' read -r accession sample others; do
         if [ ! -f "1_reads/${sample}_1.fq.gz" ] && [ ! -f "1_reads/${sample}_2.fq.gz" ]; then
             echo "Downloading sample: $sample (accession: $accession)"
-            # Run fastq-dl
-            fastq-dl --outdir 1_reads --prefix "$sample" -a "$accession"
+            
+            # Run prefetch
+            prefetch -p -O 1_reads "${accession}"
+
+            # Run fasterq-dump
+            cd 1_reads
+            fasterq-dump \
+            --threads $(nproc --ignore=1) \
+            -p \
+            --split-files "${accession}" \
+            -O .
+            # Delete temporary directories
+            rm -r "${accession}"
+            # Compress files
+            echo "Compressing fastq files"
+            pigz -p $(nproc --ignore=1) ${accession}*.fastq
             # Rename files
-            mv "1_reads/${accession}_1.fastq.gz" "1_reads/${sample}_1.fq.gz"
-            mv "1_reads/${accession}_2.fastq.gz" "1_reads/${sample}_2.fq.gz"
+            echo "Renaming files"
+            mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
+            mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
+            cd ..
         else
-            echo "Sample $sample files found. Skiping donwload."
+            echo "Sample $sample files found. Skipping download."
         fi
     done < 1_reads.tsv
     echo "Download process complete. Deactivating the environment."
     # Deactivate Conda environment
     conda activate base
-
 else
     echo "The file 1_reads.tsv was not found. Proceeding using local sequencing reads files."
 fi

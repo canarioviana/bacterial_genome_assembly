@@ -185,10 +185,6 @@ echo $CHECKM2DB
 conda deactivate
 
 ##########################################################################
-# fastq-dl (Download reads from ENA or GenBank SRA)
-conda create -n fastq-dl -c bioconda fastq-dl -y
-
-##########################################################################
 # FastQC (Evaluate short reads quality)
 conda create -n fastqc -c bioconda fastqc -y
 
@@ -251,6 +247,10 @@ sudo apt-get install gzip -y
 ## KMC (K-mer counting of sequencing reads)
 conda create -n kmc -c bioconda kmc -y
 
+############################################################
+# metaMDBG (De novo assembly of metagenomes from long reads)
+conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
+
 ##########################################################################
 # MOB-suite (Plasmid identification)
 conda create -n mob_suite -c bioconda mob_suite -y
@@ -260,12 +260,20 @@ conda create -n mob_suite -c bioconda mob_suite -y
 conda create -n multiqc -c bioconda multiqc -y
 
 ############################################################
+# myloasm (De novo assembly from long reads)
+conda create -n myloasm -c bioconda myloasm -y
+
+############################################################
 # NanoPlot (Evaluate long reads quality)
 conda create -n nanoplot -c bioconda 'python-kaleido>=1.0.0' nanoplot -y
 conda activate nanoplot
 plotly_get_chrome -y
 #sudo find ${CONDA_PREFIX} -type d -name "browser_exe" -print0 | xargs -0 sudo chmod -R a+rwx
 conda deactivate
+
+############################################################
+# NextDenovo (De novo assembly from long reads)
+conda create -n nextdenovo -c bioconda nextdenovo -y
 
 ##########################################################################
 # Openssh (Access computer remotely)
@@ -291,6 +299,10 @@ conda create -n raven -c bioconda raven-assembler -y
 ##########################################################################
 # Rename (Rename files using regular expressions)
 sudo apt-get install rename -y
+
+##########################################################################
+# SRA Tools (Download reads from NCBI SRA)
+conda create -n sra-tools -c bioconda sra-tools -y
 
 ##########################################################################
 # seqkit (Filter sequences by size)

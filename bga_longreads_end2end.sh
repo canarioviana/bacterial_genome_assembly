@@ -26,7 +26,7 @@
 
 ## 0) Sequencing type, error handling and checking Conda installation
 ## 1) Sequencing reads directory and files
-  # Reads stored as local files
+    # Reads stored as local files
 ## 2) Raw reads quality assessment
     # NanoPlot
 ## 3) Raw reads trimming and estimation of genome size

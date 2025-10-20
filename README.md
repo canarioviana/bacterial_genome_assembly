@@ -32,8 +32,8 @@ It also includes detailed instructions for the installation of all necessary sof
 ## 🛠️ The Short-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
-    * Reads stored as local files
-    * Reads from ENA or GenBank
+    * Download reads from NCBI SRA (SRA Tools)
+    * Check local reads files
 2) Raw reads quality assessment
     * FastQC
     * MultiQC
@@ -67,7 +67,8 @@ It also includes detailed instructions for the installation of all necessary sof
 ## 🛠️ The Long-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
-    * Reads stored as local files
+    * Download reads from NCBI SRA (SRA Tools)
+    * Check local reads files
 2) Raw reads quality assessment
     * NanoPlot
 3) Raw reads trimming and estimation of genome size

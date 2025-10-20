@@ -14,16 +14,16 @@
 #
 # **B. Downloading Reads from NCBI SRA**
 #
-# 1. Create a **tab-separated file** named **"1_reads.tsv"**.
-# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column.
+# 1. Create a **tab-separated file** named **"1_reads_accessions.tsv"**.
+# 2. This file **must contain** the NCBI SRA **accession number** in the first column and the **sample name** in the second column. Other columns will be ignored.
 # 3. **Do not use** special characters in the sample names.
-# 4. Place the **"1_reads.tsv"** file in the working directory.
+# 4. Place the **"1_reads_accessions.tsv"** file in the working directory.
 #
 # **C. Execution**
 #
-# Place this script (**bga_shortreads_end2end.sh**) in the working directory and execute it **using the following commands**:
+# Place this script (**bga_pairedreads_end2end.sh**) in the working directory and execute it **using the following commands**:
 # chmod +x bga_shortreads_end2end.sh
-# ./bga_shortreads_end2end.sh
+# ./bga_pairedreads_end2end.sh
 
 
 ############################################################
@@ -78,8 +78,8 @@ if command -v conda &> /dev/null; then
     # Makes 'conda activate' available in the current subshell
     source "$CONDA_BASE/etc/profile.d/conda.sh"
 else
-    echo "ERROR: The 'conda' command was not found" >&2
-    echo "Ensure Conda or Miniconda is installed and configured in your PATH" >&2
+    echo "ERROR: The 'conda' command was not found." >&2
+    echo "Ensure Conda or Miniconda is installed and configured in your PATH." >&2
     exit 1
 fi
 
@@ -91,9 +91,12 @@ fi
 ############################################################
 ## Reads from NCBI SRA
 
-# Verify the presence of the file 1_reads.tsv with a list of accessions
-if [ -f 1_reads.tsv ]; then
-    echo "The file 1_reads.tsv was found. The sequencing reads will be downloaded"
+# Delete previous file of not used reads
+rm -f 1_reads_single-end.tsv
+
+# Verify the presence of the file 1_reads_accessions.tsv with a list of accessions
+if [ -f 1_reads_accessions.tsv ]; then
+    echo "The file 1_reads_accessions.tsv was found. The sequencing reads will be downloaded."
 
     # Create output directory 
     mkdir -p 1_reads
@@ -101,10 +104,18 @@ if [ -f 1_reads.tsv ]; then
     # SRA Tools
     # Activate Conda environment
     conda activate sra-tools
+
     # Loop through file lines
     while IFS=$'\t' read -r accession sample others; do
-        if [ ! -f "1_reads/${sample}_1.fq.gz" ] && [ ! -f "1_reads/${sample}_2.fq.gz" ]; then
+        if [ -f "1_reads/${sample}_1.fq.gz" ] && [ -f "1_reads/${sample}_2.fq.gz" ]; then
+            echo "Sample $sample paired files found. Skipping download."
+        elif [ -f "1_reads/${sample}.fq.gz" ]; then
+            echo "Sample $sample single-end file found. Skipping download."
+        else
             echo "Downloading sample: $sample (accession: $accession)"
+
+            # Remove any incomplete files
+            rm -f "1_reads/${sample}_1.fq.gz" "1_reads/${sample}_2.fq.gz" "1_reads/${sample}.fq.gz"    
             
             # Run prefetch
             prefetch -p -O 1_reads "${accession}"
@@ -119,22 +130,38 @@ if [ -f 1_reads.tsv ]; then
             # Delete temporary directories
             rm -r "${accession}"
             # Compress files
-            echo "Compressing fastq files"
+            echo "Compressing fastq files."
             pigz -p $(nproc --ignore=1) ${accession}*.fastq
-            # Rename files
-            echo "Renaming files"
-            mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
-            mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
-            cd ..
-        else
-            echo "Sample $sample files found. Skipping download."
+
+            # Check if the reads are paired-end
+            if [ -f "${accession}_1.fastq.gz" ] && [ -f "${accession}_2.fastq.gz" ];  then
+                echo "Sample ${sample} has paired-end reads."
+                # Rename files
+                echo "Renaming files."
+                mv "${accession}_1.fastq.gz" "${sample}_1.fq.gz"
+                mv "${accession}_2.fastq.gz" "${sample}_2.fq.gz"
+                # Go back to main directory
+                cd ..
+            # Check if the reads are not paired-end
+            elif [ -f "${accession}.fastq.gz" ]; then
+                echo "Sample ${sample} has single-end reads."
+                # Renaming file
+                echo "Renaming file."
+                mv "${accession}.fastq.gz" "${sample}.fq.gz"
+                # Warning about the requirement of paired-reads
+                echo "Warning: this script only use paired-end reads. This file will not be used." 
+                # Create list of not used read files
+                echo -e "${accession}\t${sample}.fq.gz" >> ../1_reads_single-end.tsv
+                # Go back to main directory
+                cd ..
+            fi
         fi
-    done < 1_reads.tsv
+    done < 1_reads_accessions.tsv
     echo "Download process complete. Deactivating the environment."
     # Deactivate Conda environment
     conda activate base
 else
-    echo "The file 1_reads.tsv was not found. Proceeding using local sequencing reads files."
+    echo "The file 1_reads_accessions.tsv was not found. Proceeding using local files."
 fi
 
 ############################################################
@@ -149,11 +176,31 @@ fi
 
 # Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
 
-# Checking the presence of files in the format 1_reads/*_R1_001.fastq.gz
-if ls 1_reads/*_R1_001.fastq.gz > /dev/null 2>&1; then
-    echo "Found files in the format 1_reads/*_R1_001.fastq.gz" >&2
+
+# Checking the presence of files in the format 1_reads/*_1.fastq.gz and 1_reads/*_2.fastq.gz
+if ls 1_reads/*_1.fastq.gz > /dev/null 2>&1; then
+    echo "Found files in the format *_1.fastq.gz and *_2.fastq.gz" >&2
     echo "Renaming them and their pairs to the format *_1.fq.gz and *_2.fq.gz" >&2
-    # Rename the .fq.gz files
+    # Rename the .fastq.gz files
+    rename 's/\.fastq\.gz$/.fq.gz/g' 1_reads/*.fastq.gz
+
+    # Checking the presence of .md5 files
+    if ls 1_reads/*_1.fastq.gz.md5 > /dev/null 2>&1; then
+        # Rename the file names inside the .md5 files
+        sed -i 's/\.fastq\.gz$/.fq.gz/' 1_reads/*.md5
+        # Rename the .md5 files
+        rename 's/\.fastq\.gz.md5$/.fq.gz.md5/' 1_reads/*.fastq.gz.md5
+    fi
+
+else
+    :
+fi
+
+# Checking the presence of files in the format 1_reads/*_R1_001.fastq.gz and 1_reads/*_2.fastq.gz
+if ls 1_reads/*_R1_001.fastq.gz > /dev/null 2>&1; then
+    echo "Found files in the format *_R1_001.fastq.gz and *_2.fastq.gz" >&2
+    echo "Renaming them and their pairs to the format *_1.fq.gz and *_2.fq.gz" >&2
+    # Rename the .fastq.gz files
     rename 's/_R1_001\.fastq\.gz/_1.fq.gz/; s/_R2_001\.fastq\.gz/_2.fq.gz/' 1_reads/*.fastq.gz
 
     # Checking the presence of .md5 files

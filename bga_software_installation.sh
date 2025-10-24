@@ -184,6 +184,10 @@ conda activate checkm2
 echo $CHECKM2DB
 conda deactivate
 
+###########################################################
+# chopper (Trim long reads)
+conda create -n chopper -c bioconda chopper -y
+
 ##########################################################################
 # FastQC (Evaluate short reads quality)
 conda create -n fastqc -c bioconda fastqc -y
@@ -193,8 +197,16 @@ conda create -n fastqc -c bioconda fastqc -y
 conda create -n fastp -c bioconda fastp -y
 
 ############################################################
-# Fastplong (Trim long reads)
+# Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
 conda create -n fastplong -c bioconda fastplong -y
+
+############################################################
+# Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
+git clone https://github.com/rrwick/Filtlong.git
+cd Filtlong
+make -j
+bin/filtlong -h
+sudo cp bin/filtlong /usr/local/bin
 
 ############################################################
 # Flye (De novo genome assembly from long sequencing reads)
@@ -248,7 +260,7 @@ sudo apt-get install gzip -y
 conda create -n kmc -c bioconda kmc -y
 
 ############################################################
-# metaMDBG (De novo assembly of metagenomes from long reads)
+# metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
 conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
 
 ##########################################################################
@@ -260,7 +272,7 @@ conda create -n mob_suite -c bioconda mob_suite -y
 conda create -n multiqc -c bioconda multiqc -y
 
 ############################################################
-# myloasm (De novo assembly from long reads)
+# myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
 conda create -n myloasm -c bioconda myloasm -y
 
 ############################################################
@@ -272,7 +284,7 @@ plotly_get_chrome -y
 conda deactivate
 
 ############################################################
-# NextDenovo (De novo assembly from long reads)
+# NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
 conda create -n nextdenovo -c bioconda nextdenovo -y
 
 ##########################################################################

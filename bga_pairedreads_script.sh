@@ -1,7 +1,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 20/10/2025
+# Date: 23/10/2025
 # More info: see README.md in the repository
 #
 # Instructions:
@@ -206,6 +206,15 @@ for r1 in 1_reads/*_1.fq.gz; do
     r1filename=${r1##*/}
     # Extract sample name
     sample=${r1filename%%_*}
+
+    # Verify if the input files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_fastp_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     # Inform the current sample being processed
     echo "Processing sample: ${sample}"
     echo "R1: ${r1}"
@@ -253,6 +262,14 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     # Extract sample name
     sample=${r1filename%%_*}
 
+    # Verify if the input files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_genomesize_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     # Create directory for the genome size estimation results
     genomesizedir="3_fastp/${sample}_genomesize"
     mkdir ${genomesizedir}
@@ -293,18 +310,40 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     # Deactivate Conda environment
     conda activate base
 
-    # Get estimated genome size
-    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
-    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
-    # Inform estimated genome size
-    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
-    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
+    # Verify that summary.txt exists
+    summary_file="${genomesizedir}/genomescope/summary.txt"
+    if [[ ! -f "$summary_file" ]]; then
+        echo "Warning: GenomeScope failed for sample ${sample} (no summary.txt). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Clean up temp files before skipping
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
+
+    # Extract genome size estimate
+    genomesize_bp=$(grep "Genome Haploid Length" "$summary_file" | awk '{print $(NF-1)}' | tr -d ',')
+    # Validate the value
+    if [[ "$genomesize_bp" =~ ^[0-9]+$ ]]; then
+        genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+        echo "Estimated genome size of sample ${sample}: ${genomesize_mb} Mb"
+        echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv
+    else
+        echo "Warning: Invalid genome size estimate for sample ${sample} (${genomesize_bp}). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Move kmc temporary files to the genome size directory
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        # Delete the directory kmc_tmp
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
     # Delete the directory kmc_tmp
     rm -r kmc_tmp
-
     # Downsampling reads using Rasusa
     # Activate Conda environment
     conda activate rasusa
@@ -384,6 +423,13 @@ for r1 in 3_fastp/*_1.fq.gz; do
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}
+    # Verify if the assembly files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 5_unicycler_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
     # Run Unicycler
     unicycler \
     -t $(nproc --ignore=1) \
@@ -413,6 +459,13 @@ for r1 in 3_fastp/*_1.fq.gz; do
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}
+    # Verify if the assembly files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 5_shovill_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
     # Run shovill
     shovill \
     --cpus $(nproc --ignore=1) \
@@ -442,6 +495,13 @@ for r1 in 3_fastp/*_1.fq.gz; do
     sample=${filename%%_*}
     # Activate Conda environment
     conda activate spades
+    # Verify if the assembly files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 5_spades_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
     # Run SPAdes
     spades.py \
     -t $(nproc --ignore=1) \

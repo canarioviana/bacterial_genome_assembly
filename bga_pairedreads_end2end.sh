@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 20/10/2025
+# Date: 23/10/2025
 # More info: see README.md in the repository
 #
 # Instructions:
@@ -80,6 +80,7 @@ if command -v conda &> /dev/null; then
 else
     echo "ERROR: The 'conda' command was not found." >&2
     echo "Ensure Conda or Miniconda is installed and configured in your PATH." >&2
+    # Exit the script
     exit 1
 fi
 
@@ -96,6 +97,9 @@ rm -f 1_reads_single-end.tsv
 
 # Verify the presence of the file 1_reads_accessions.tsv with a list of accessions
 if [ -f 1_reads_accessions.tsv ]; then
+    echo "############################################################"
+    echo "# Downloading reads from NCBI SRA"
+    echo "############################################################"
     echo "The file 1_reads_accessions.tsv was found. The sequencing reads will be downloaded."
 
     # Create output directory 
@@ -167,15 +171,19 @@ fi
 ############################################################
 ## Reads stored as local files
 
+echo "############################################################"
+echo "# Checking local read files"
+echo "############################################################"
+
 # Checking wether the directory 1_reads exists
 if [ ! -d 1_reads ]; then
     echo "The reads directory '1_reads' was not found" >&2
     echo "Please create it and put the files in it" >&2
+    # Exit the script
     exit 1
 fi
 
-# Standardize the paired-end file names of each sample to samplename_1.fq.gz and samplename_2.fq.gz
-
+# The paired-end file names of each sample should be standardized to samplename_1.fq.gz and samplename_2.fq.gz
 
 # Checking the presence of files in the format 1_reads/*_1.fastq.gz and 1_reads/*_2.fastq.gz
 if ls 1_reads/*_1.fastq.gz > /dev/null 2>&1; then
@@ -222,6 +230,7 @@ missing_pairs=0
 for r1 in 1_reads/*_1.fq.gz; do
     #Check the presence of r1 file
     if [[ "$r1" == "1_reads/*_1.fq.gz" ]]; then
+        # Exit the script
         break 
     fi
 
@@ -246,6 +255,7 @@ fi
 if [ "$missing_pairs" -eq 1 ]; then
     echo "The script requires read pairs for all samples in the format *_1.fq.gz and *_2.fq.gz" >&2
     echo "Rename them or put them in the diretory 1_reads" >&2
+    # Exit the script
     exit 1
 fi
 
@@ -262,6 +272,10 @@ fi
 ############################################################
 ## FastQC
 
+echo "############################################################"
+echo "# Running FastQC for raw reads"
+echo "############################################################"
+
 # Create an output directory
 mkdir 2_fastqc
 # Activate Conda environment
@@ -275,6 +289,10 @@ zip -r 2_fastqc.zip 2_fastqc
 
 ############################################################
 ## FastQC -> MultiQC
+
+echo "############################################################"
+echo "# Running MultiQC for raw reads"
+echo "############################################################"
 
 # Activate Conda environment
 conda activate multiqc
@@ -295,6 +313,10 @@ rm -r 2_fastqc 2_fastqc_multiqc
 ############################################################
 ## Fastp
 
+echo "############################################################"
+echo "# Running Fastp"
+echo "############################################################"
+
 # Create an output directory
 mkdir 3_fastp
 # Activate Conda environment
@@ -307,6 +329,15 @@ for r1 in 1_reads/*_1.fq.gz; do
     r1filename=${r1##*/}
     # Extract sample name
     sample=${r1filename%%_*}
+
+    # Verify if the input files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_fastp_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     # Inform the current sample being processed
     echo "Processing sample: ${sample}"
     echo "R1: ${r1}"
@@ -339,11 +370,12 @@ rm 3_fastp/*.json 3_fastp/*.html
 ############################################################
 ## Estimation of genome size (KMC, GenomeScope) and downsampling  (Rasusa)
 
+echo "############################################################"
+echo "# Running estimation of genome size and downsampling"
+echo "############################################################"
+
 # Required coverage
 coverage=100
-
-# Create output table file
-> 3_genomesize.tsv
 
 # Loop through a list of files
 for r1 in 3_fastp/*_trimmed_1.fq.gz; do
@@ -353,6 +385,14 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     r1filename=${r1##*/}
     # Extract sample name
     sample=${r1filename%%_*}
+
+    # Verify if the input files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_genomesize_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
 
     # Create directory for the genome size estimation results
     genomesizedir="3_fastp/${sample}_genomesize"
@@ -394,12 +434,35 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     # Deactivate Conda environment
     conda activate base
 
-    # Get estimated genome size
-    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
-    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
-    # Inform estimated genome size
-    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
-    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
+    # Verify that summary.txt exists
+    summary_file="${genomesizedir}/genomescope/summary.txt"
+    if [[ ! -f "$summary_file" ]]; then
+        echo "Warning: GenomeScope failed for sample ${sample} (no summary.txt). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Clean up temp files before skipping
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
+
+    # Extract genome size estimate
+    genomesize_bp=$(grep "Genome Haploid Length" "$summary_file" | awk '{print $(NF-1)}' | tr -d ',')
+    # Validate the value
+    if [[ "$genomesize_bp" =~ ^[0-9]+$ ]]; then
+        genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+        echo "Estimated genome size of sample ${sample}: ${genomesize_mb} Mb"
+        echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv
+    else
+        echo "Warning: Invalid genome size estimate for sample ${sample} (${genomesize_bp}). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Move kmc temporary files to the genome size directory
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        # Delete the directory kmc_tmp
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
@@ -440,6 +503,10 @@ rm -r 3_fastp/*_genomesize
 ############################################################
 ## FastQC
 
+echo "############################################################"
+echo "# Running FastQC for trimmed reads"
+echo "############################################################"
+
 # Create an output directory
 mkdir 4_fastqc
 # Activate Conda environment
@@ -453,6 +520,10 @@ zip -r 4_fastqc.zip 4_fastqc
 
 ############################################################
 ## Fastp -> FastQC -> MultiQC
+
+echo "############################################################"
+echo "# Running for MultiQC for trimmed reads"
+echo "############################################################"
 
 # Activate Conda environment
 conda activate multiqc
@@ -470,6 +541,10 @@ rm -r 4_fastqc 4_fastqc_multiqc
 ## 5) De novo assembly
 ############################################################
 
+echo "############################################################"
+echo "# 5) Running de novo assembly with Unicycler"
+echo "############################################################"
+
 ############################################################
 ## Unicycler (only for prokaryotic genomes)
 
@@ -485,6 +560,13 @@ for r1 in 3_fastp/*_1.fq.gz; do
     filename=${r1##*/}
     # Extract sample name
     sample=${filename%%_*}
+    # Verify if the assembly files are empty
+    if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 5_unicycler_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
     # Run Unicycler
     unicycler \
     -t $(nproc --ignore=1) \
@@ -506,6 +588,11 @@ zip -r 5_unicycler.zip 5_unicycler
 
 ############################################################
 ## Create assemblies directory
+
+echo "############################################################"
+echo "# Creating assemblies directory"
+echo "############################################################"
+
 mkdir 6_assemblies
 
 ############################################################
@@ -540,6 +627,10 @@ rm -r 5_unicycler
 ############################################################
 ## CheckM2
 
+echo "############################################################"
+echo "# Running CheckM2"
+echo "############################################################"
+
 # Activate Conda environment
 conda activate checkm2
 # Run the program
@@ -557,6 +648,10 @@ rm -r 7_checkm
 
 ############################################################
 ## GUNC
+
+echo "############################################################"
+echo "# Running GUNC"
+echo "############################################################"
 
 # Create an output directory
 mkdir 7_gunc 7_gunc_temp
@@ -592,6 +687,10 @@ rm -r 7_gunc 7_gunc_temp
 ############################################################
 ## QUAST
 
+echo "############################################################"
+echo "# Running QUAST"
+echo "############################################################"
+
 # Activate Conda environment
 conda activate quast
 # Run the program
@@ -606,6 +705,10 @@ rm -r 7_quast
 
 ############################################################
 ## Barrnap
+
+echo "############################################################"
+echo "# Running Barrnap"
+echo "############################################################"
 
 # Create an output directory
 mkdir 7_barrnap
@@ -639,6 +742,10 @@ rm -r 7_barrnap
 
 ############################################################
 ## Vertical sequencing coverage
+
+echo "############################################################"
+echo "# Calculating vertical sequencing coverage"
+echo "############################################################"
 
 # Create output file
 echo -e Sample"\t"Coverage > 7_coverage.tsv
@@ -680,6 +787,10 @@ done
 ############################################################
 ## GTDB-Tk
 
+echo "############################################################"
+echo "# Running GTDB-Tk"
+echo "############################################################"
+
 # Requires 64GB of RAM if the species is not identified by the ANI screening step
 # Activate Conda environment
 conda activate gtdbtk
@@ -717,6 +828,10 @@ conda activate base
 
 ############################################################
 ## MOB-suite
+
+echo "############################################################"
+echo "# Running MOB-suite"
+echo "############################################################"
 
 # Create an output directory
 mkdir 9_mobsuite
@@ -840,6 +955,10 @@ done
 ############################################################
 ## Add molecule attribution to contigs. Required for batch genome submission.
 
+echo "############################################################"
+echo "# Adding molecule attribution to contigs"
+echo "############################################################"
+
 # Copy assemblies directory
 cp -r 6_assemblies 10_assemblies_for_analysis
 # Change extension to .fsa
@@ -856,6 +975,7 @@ for assembly in 10_assemblies_for_analysis/*.fsa; do
     while IFS=$'\t' read -r sample_id molecule_type primary_cluster_id secondary_cluster_id contig_id others; do
         # Ignore column names
         if [ "$sample_id" == "sample_id" ]; then
+            # Skip to the next iteration
             continue
         fi
         # Conditional: plasmid contig
@@ -912,4 +1032,3 @@ rm -r 9_mobsuite
 # https://submit.ncbi.nlm.nih.gov/subs/sra/
 # Upload a table containing the sequencing metadata. A template (SRA: Metadata spreadsheet with sample names) is available in https://submit.ncbi.nlm.nih.gov/templates/.
 # Upload the .fq.gz files in directory 1_reads
-

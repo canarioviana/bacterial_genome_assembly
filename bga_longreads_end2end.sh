@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 20/10/2025
+# Date: 23/10/2025
 # More info: see README.md in the repository
 #
 # Instructions:
@@ -30,7 +30,9 @@
 ## 2) Raw reads quality assessment
     # NanoPlot
 ## 3) Raw reads trimming and estimation of genome size
-    # Fastplong
+    # Chopper
+    # Fastplong (Not used in the end-to-end pipeline)
+    # Filtlong (Not used in the end-to-end pipeline)
     # Estimation of genome size (KMC and GenomeScope)
 ## 4) Trimmed reads quality assessment
     ## NanoPlot
@@ -39,7 +41,7 @@
     # metaMDBG (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
     # myloasm (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
     # NextDenovo (Not used in the end-to-end pipeline. Unsatisfactory using a test dataset.)
-    # Raven
+    # Raven (Not used in the end-to-end pipeline)
 ## 6) Organization of de novo assembly files
 ## 7) Assembly quality assessment
     # CheckM2
@@ -171,6 +173,10 @@ fi
 ## 1) Sequencing reads directory and files
 ############################################################
 
+echo "############################################################"
+echo "# Checking local read files"
+echo "############################################################"
+
 ############################################################
 ## Reads stored as local files
 
@@ -236,6 +242,10 @@ fi
 ############################################################
 ## NanoPlot
 
+echo "############################################################"
+echo "# Running NanoPlot for raw reads"
+echo "############################################################"
+
 # Create an output directory
 mkdir 2_nanoplot
 # Activate Conda environment
@@ -247,6 +257,15 @@ for reads in 1_reads/*.fq.gz; do
     # Extract sample name
     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+    # Verify if the input files are empty
+    if [ ! -s "$reads" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 2_nanoplot_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     echo "NanoPlot is processing sample: ${sample}"
     echo "A warning is expected if the Conda environment was installed by the root."
     mkdir "2_nanoplot/${sample}"
@@ -264,45 +283,145 @@ rm -r 2_nanoplot
 ## 3) Raw reads trimming and estimation of genome size
 ############################################################
 
-############################################################
-## Fastplong
+###########################################################
+## chopper
+
+echo "############################################################"
+echo "# Running chopper"
+echo "############################################################"
 
 # Create an output directory
-mkdir 3_fastplong
+mkdir 3_chopper
 # Activate Conda environment
-conda activate fastplong
+conda activate chopper
 # Loop through a list of files
 for reads in 1_reads/*.fq.gz; do
+
     # Extract reads file name
     readsfilename=${reads##*/}
     # Extract sample name
     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+    # Verify if the input files are empty
+    if [ ! -s "$reads" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_chopper_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     # Inform the current sample being processed
     echo "Processing sample: ${sample}"
     echo "Reads file ${reads}"
-    # Run Fastplong
-    fastplong \
-    --thread $(nproc --ignore=1) \
-    --cut_front \
-    --cut_tail \
-    --cut_window_size 4 \
-    --cut_mean_quality 20 \
-    --length_required 1000 \
+
+    # Run chopper
+    chopper \
+    -t $(nproc --ignore=1) \
+    --minlength 1000 \
+    --trim-approach trim-by-quality \
+    --cutoff 20 \
     -i "$reads" \
-    -o 3_fastplong/"${sample}_trimmed.fq.gz" \
-    --html 3_fastplong/"$sample"_fastp.html \
-    --json 3_fastplong/"$sample"_fastp.json
+    | gzip > 3_chopper/"${sample}_trimmed.fq.gz"
 done
 # Deactivate Conda environment
 conda activate base
-# Compress report files
-zip -r 3_fastplong.zip 3_fastplong/*.json 3_fastplong/*.html
-# Delete report files
-rm 3_fastplong/*.json 3_fastplong/*.html
+
+# ############################################################
+# ## Fastplong
+
+# echo "############################################################"
+# echo "# Running Fastplong"
+# echo "############################################################"
+
+# # Create an output directory
+# mkdir 3_fastplong
+# # Activate Conda environment
+# conda activate fastplong
+# # Loop through a list of files
+# for reads in 1_reads/*.fq.gz; do
+
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+#     # Verify if the input files are empty
+#     if [ ! -s "$reads" ]; then
+#         echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+#         echo -e "${sample}" >> 3_fastplog_skiped_samples.tsv
+#         # Skip to the next iteration
+#         continue
+#     fi
+
+#     # Inform the current sample being processed
+#     echo "Processing sample: ${sample}"
+#     echo "Reads file ${reads}"
+
+#     # Run Fastplong
+#     fastplong \
+#     --thread $(nproc --ignore=1) \
+#     --cut_front \
+#     --cut_tail \
+#     --cut_window_size 4 \
+#     --cut_mean_quality 20 \
+#     --length_required 1000 \
+#     -i "$reads" \
+#     -o 3_fastplong/"${sample}_trimmed.fq.gz" \
+#     --html 3_fastplong/"$sample"_fastp.html \
+#     --json 3_fastplong/"$sample"_fastp.json
+# done
+# # Deactivate Conda environment
+# conda activate base
+# # Compress report files
+# zip -r 3_fastplong.zip 3_fastplong/*.json 3_fastplong/*.html
+# # Delete report files
+# rm 3_fastplong/*.json 3_fastplong/*.html
+
+# ############################################################
+# ## Filtlong
+
+# echo "############################################################"
+# echo "# Running Filtlong"
+# echo "############################################################"
+
+# # Create an output directory
+# mkdir 3_filtlong
+# # Loop through a list of files
+# for reads in 1_reads/*.fq.gz; do
+
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+#     # Verify if the input files are empty
+#     if [ ! -s "$reads" ]; then
+#         echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+#         echo -e "${sample}" >> 3_filtlong_skiped_samples.tsv
+#         # Skip to the next iteration
+#         continue
+#     fi
+
+#     # Inform the current sample being processed
+#     echo "Processing sample: ${sample}"
+#     echo "Reads file ${reads}"
+
+#     # Run Fitlong
+#     filtlong \
+#     --min_length 1000 \
+#     "$reads" \
+#     | gzip > 3_filtlong/"${sample}_trimmed.fq.gz"
+# done
 
 ############################################################
 ## Estimation of genome size
+
+echo "############################################################"
+echo "# Estimating genome size"
+echo "############################################################"
 
 # Create output directory
 mkdir 3_genomesize
@@ -310,11 +429,20 @@ mkdir 3_genomesize
 > 3_genomesize.tsv
 
 # Loop through a list of files
-for reads in 3_fastplong/*.fq.gz; do
+for reads in 3_chopper/*.fq.gz; do
     # Extract file name
     readsfilename=${reads##*/}
     # Extract sample name
-    sample=${readsfilename%%_*}
+    sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+    sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+    # Verify if the input files are empty
+    if [ ! -s "$reads" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 3_genomesize_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
 
     # Create directory for the genome size estimation results
     genomesizedir="3_genomesize/${sample}_genomesize"
@@ -356,12 +484,35 @@ for reads in 3_fastplong/*.fq.gz; do
     # Deactivate Conda environment
     conda activate base
 
-    # Get estimated genome size
-    genomesize_bp=$(grep "Genome Haploid Length" "${genomesizedir}/genomescope/summary.txt" | awk '{print $(NF-1)}' | tr -d ',')
-    genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
-    # Inform estimated genome size
-    echo "Estimated genome size of sample ${sample}: ${genomesize_mb}Mb"
-    echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv 
+    # Verify that summary.txt exists
+    summary_file="${genomesizedir}/genomescope/summary.txt"
+    if [[ ! -f "$summary_file" ]]; then
+        echo "Warning: GenomeScope failed for sample ${sample} (no summary.txt). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Clean up temp files before skipping
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
+
+    # Extract genome size estimate
+    genomesize_bp=$(grep "Genome Haploid Length" "$summary_file" | awk '{print $(NF-1)}' | tr -d ',')
+    # Validate the value
+    if [[ "$genomesize_bp" =~ ^[0-9]+$ ]]; then
+        genomesize_mb=$(echo "scale=2; $genomesize_bp / 1000000" | bc)
+        echo "Estimated genome size of sample ${sample}: ${genomesize_mb} Mb"
+        echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv
+    else
+        echo "Warning: Invalid genome size estimate for sample ${sample} (${genomesize_bp}). Skipping sample..."
+        echo -e "${sample}\tNA" >> 3_genomesize.tsv
+        # Move kmc temporary files to the genome size directory
+        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        # Delete the directory kmc_tmp
+        rm -r kmc_tmp
+        # Skip to the next iteration
+        continue
+    fi
 
     # Move kmc temporary files to the genome size directory
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
@@ -381,17 +532,30 @@ done
 ############################################################
 ## NanoPlot
 
+echo "############################################################"
+echo "# Running NanoPlot for trimmed reads"
+echo "############################################################"
+
 # Create an output directory
 mkdir 4_nanoplot
 # Activate Conda environment
 conda activate nanoplot
 # Loop through a list of files
-for reads in 3_fastplong/*.fq.gz; do
+for reads in 3_chopper/*.fq.gz; do
     # Extract reads file name
     readsfilename=${reads##*/}
     # Extract sample name
     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+
+    # Verify if the input files are empty
+    if [ ! -s "$reads" ]; then
+        echo "Warning: The input files of sample ${sample} are empty. Skiping..."
+        echo -e "${sample}" >> 4_nanoplot_skiped_samples.tsv
+        # Skip to the next iteration
+        continue
+    fi
+
     echo "NanoPlot is processing sample: ${sample}"
     echo "A warning is expected if the Conda environment was installed by the root."
     mkdir "4_nanoplot/${sample}"
@@ -412,17 +576,22 @@ rm -r 4_nanoplot
 ############################################################
 ## Flye
 
+echo "############################################################"
+echo "# Running de novo assembly with Flye"
+echo "############################################################"
+
 # Create an output directory
 mkdir 5_flye
 
 # Activate Conda environment
 conda activate flye
 # Loop through a list of files
-for reads in 3_fastplong/*.fq.gz; do
+for reads in 3_chopper/*.fq.gz; do
     # Extract reads file name
     readsfilename=${reads##*/}
     # Extract sample name
-    sample=${readsfilename%%_*}
+    sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+    sample=${sample%%.*} # In case the file name is samplename.fq.gz
     # Run Flye
     echo "Assembling the genome of sample: $sample"
     flye -t $(nproc --ignore=1) \
@@ -438,16 +607,21 @@ zip -r 5_flye.zip 5_flye
 # ############################################################
 # ## metaMDBG (for metagenomes)
 
+# echo "############################################################"
+# echo "# Running de novo assembly with metaMDBG"
+# echo "############################################################"
+
 # # Create an output directory
 # mkdir 5_metamdbg
 # # Activate Conda environment
 # conda activate metamdbg
 # # Loop through a list of files
-# for reads in 3_fastplong/*.fq.gz; do
+# for reads in 3_chopper/*.fq.gz; do
 #     # Extract reads file name
 #     readsfilename=${reads##*/}
 #     # Extract sample name
-#     sample=${readsfilename%%_*}
+#    sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#    sample=${sample%%.*} # In case the file name is samplename.fq.gz
 #     # Run metaMDBG
 #     echo "metaMDBG is assembling the genome of sample: $sample"
 #     metaMDBG asm \
@@ -463,16 +637,21 @@ zip -r 5_flye.zip 5_flye
 # ############################################################
 # ## myloasm
 
+# echo "############################################################"
+# echo "# Running de novo assembly with myloasm"
+# echo "############################################################"
+
 # # Create an output directory
 # mkdir 5_myloasm
 # # Activate Conda environment
 # conda activate myloasm
 # # Loop through a list of files
-# for reads in 3_fastplong/*.fq.gz; do
+# for reads in 3_chopper/*.fq.gz; do
 #     # Extract reads file name
 #     readsfilename=${reads##*/}
 #     # Extract sample name
-#     sample=${readsfilename%%_*}
+#    sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#    sample=${sample%%.*} # In case the file name is samplename.fq.gz
 #     # Run Myloasm
 #     echo "Myloasm is assembling the genome of sample: $sample"
 #     myloasm \
@@ -488,17 +667,22 @@ zip -r 5_flye.zip 5_flye
 # ############################################################
 # ## NextDenovo
 
+# echo "############################################################"
+# echo "# Running de novo assembly with NextDenovo"
+# echo "############################################################"
+
 # # Create an output directory
 # mkdir 5_nextdenovo
 
 # # Activate Conda environment
 # conda activate nextdenovo
 # # Loop through a list of files
-# for reads in 3_fastplong/*.fq.gz; do
+# for reads in 3_chopper/*.fq.gz; do
 #     # Extract reads file name
 #     readsfilename=${reads##*/}
 #     # Extract sample name
-#     sample=${readsfilename%%_*}
+#    sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#    sample=${sample%%.*} # In case the file name is samplename.fq.gz
 
 #     # Create output directory
 #     working_dir="5_nextdenovo/${sample}_nextdenovo"
@@ -544,34 +728,39 @@ zip -r 5_flye.zip 5_flye
 # # Compress the output directory
 # zip -r 5_nextdenovo.zip 5_nextdenovo
 
-############################################################
-## Raven
+# ############################################################
+# ## Raven
 
-# Create an output directory
-mkdir 5_raven
-# Activate Conda environment
-conda activate raven
-# Loop through a list of files
-for reads in 3_fastplong/*.fq.gz; do
-    # Extract reads file name
-    readsfilename=${reads##*/}
-    # Extract sample name
-    sample=${readsfilename%%_*}
-    # Create output directory
-    mkdir "5_raven/${sample}_raven"
-    # Run Raven
-    echo "Raven is assembling the genome of sample: $sample"
-    raven \
-    -t $(nproc --ignore=1) \
-    "$reads" \
-    > "5_raven/${sample}_raven/${sample}_raven.fasta"
-done
-# Deactivate Conda environment
-conda activate base
-# Delete temporary file
-rm raven.cereal
-# Compress the output directory
-zip -r 5_raven.zip 5_raven
+# echo "############################################################"
+# echo "# Running de novo assembly with Raven"
+# echo "############################################################"
+
+# # Create an output directory
+# mkdir 5_raven
+# # Activate Conda environment
+# conda activate raven
+# # Loop through a list of files
+# for reads in 3_chopper/*.fq.gz; do
+#     # Extract reads file name
+#     readsfilename=${reads##*/}
+#     # Extract sample name
+#     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
+#     sample=${sample%%.*} # In case the file name is samplename.fq.gz
+#     # Create output directory
+#     mkdir "5_raven/${sample}_raven"
+#     # Run Raven
+#     echo "Raven is assembling the genome of sample: $sample"
+#     raven \
+#     -t $(nproc --ignore=1) \
+#     "$reads" \
+#     > "5_raven/${sample}_raven/${sample}_raven.fasta"
+# done
+# # Deactivate Conda environment
+# conda activate base
+# # Delete temporary file
+# rm raven.cereal
+# # Compress the output directory
+# zip -r 5_raven.zip 5_raven
 
 
 ############################################################
@@ -580,6 +769,11 @@ zip -r 5_raven.zip 5_raven
 
 ############################################################
 ## Create assemblies directory
+
+echo "############################################################"
+echo "# Creating assemblies directory"
+echo "############################################################"
+
 mkdir 6_assemblies
 
 ############################################################
@@ -592,7 +786,7 @@ for dir in 5_flye/*/; do
     # Extract sample name
     sample=${dirname%%_flye*}
     # Copy and rename the assembly file
-    cp "${dir}assembly.fasta" "6_assemblies/${sample}_flye.fasta"
+    cp "${dir}assembly.fasta" "6_assemblies/${sample}.fasta"
 done
 
 # ############################################################
@@ -634,10 +828,10 @@ done
 #     cp "${dir}/03.ctg_graph/nd.asm.fasta" "6_assemblies/${sample}_nextdenovo.fasta"
 # done
 
-############################################################
-## Assemblies from Raven
+# ############################################################
+# ## Assemblies from Raven
 
-cp 5_raven/*/*.fasta 6_assemblies
+# cp 5_raven/*/*.fasta 6_assemblies
 
 ############################################################
 ## Compress the assemblies directory
@@ -661,6 +855,10 @@ rm -r 5_raven
 ############################################################
 ## CheckM2
 
+echo "############################################################"
+echo "# Running CheckM2"
+echo "############################################################"
+
 # Activate Conda environment
 conda activate checkm2
 # Run the program
@@ -678,6 +876,10 @@ rm -r 7_checkm
 
 ############################################################
 ## GUNC
+
+echo "############################################################"
+echo "# Running GUNC"
+echo "############################################################"
 
 # Create an output directory
 mkdir 7_gunc 7_gunc_temp
@@ -713,6 +915,10 @@ rm -r 7_gunc 7_gunc_temp
 ############################################################
 ## QUAST
 
+echo "############################################################"
+echo "# Running QUAST"
+echo "############################################################"
+
 # Activate Conda environment
 conda activate quast
 # Run the program
@@ -727,6 +933,10 @@ rm -r 7_quast
 
 ############################################################
 ## Barrnap
+
+echo "############################################################"
+echo "# Running Barrnap"
+echo "############################################################"
 
 # Create an output directory
 mkdir 7_barrnap
@@ -743,7 +953,7 @@ for file in 6_assemblies/*.fasta; do
     -o "7_barrnap/${prefix}_bac_barrnap.fasta" \
     < $file \
     > "7_barrnap/${prefix}_bac_barrnap.gff"
-    # Run barrnap for archaea
+    # Run the program for archaea
     barrnap \
     --threads $(nproc --ignore=1) \
     --kingdom arc \
@@ -772,13 +982,13 @@ for file in 6_assemblies/*.fasta; do
     # Inform the sample
     echo -e Calculating sequencing coverage for assembly: $assembly
     echo -e Assembly file: ${file}
-    echo -e Read file: 3_fastplong/${sample}_trimmed.fq.gz
+    echo -e Read file: 3_chopper/${sample}_trimmed.fq.gz
     # Count bases in assembly
     bases_in_assembly=$(grep -v '^>' "$file" | tr -d '\n' | wc -c)
     echo -e Bases in assembly: $bases_in_assembly
     # Count bases in sequencing files
     # bases_in_reads=$(zcat 3_fastp/"$sample"*.gz | awk 'NR%4==2 {print $0}' | tr -d '\n' | wc -c)
-    bases_in_reads=$(zcat 3_fastplong/${sample}_trimmed.fq.gz | 
+    bases_in_reads=$(zcat 3_chopper/${sample}_trimmed.fq.gz | 
                      awk 'NR%4==2 {print length}' | paste -sd+ | bc)
     echo -e Bases in reads: $bases_in_reads
     # Calculate vertical coverage
@@ -799,6 +1009,10 @@ done
 
 ############################################################
 ## GTDB-Tk
+
+echo "############################################################"
+echo "# Running GTDB-Tk"
+echo "############################################################"
 
 # Requires 64GB of RAM if the species is not identified by the ANI screening step
 # Activate Conda environment
@@ -837,6 +1051,10 @@ conda activate base
 
 ############################################################
 ## MOB-suite
+
+echo "############################################################"
+echo "# Running MOB-suite"
+echo "############################################################"
 
 # Create an output directory
 mkdir 9_mobsuite
@@ -959,6 +1177,10 @@ done
 
 ############################################################
 ## Add molecule attribution to contigs. Required for batch genome submission.
+
+echo "############################################################"
+echo "# Adding molecule attribution to contigs"
+echo "############################################################"
 
 # Copy assemblies directory
 cp -r 6_assemblies 10_assemblies_for_analysis

@@ -72,13 +72,12 @@ It also includes detailed instructions for the installation of all necessary sof
 2) Raw reads quality assessment
     * NanoPlot
 3) Raw reads trimming and estimation of genome size
-    * Fastplong
+    * Chopper
     * Estimation of genome size (KMC and GenomeScope)
 4) Trimmed reads quality assessment
     * NanoPlot
 5) De novo assembly
     * Flye
-    * Raven
 6) Organization of de novo assembly files
 7) Assembly quality assessment
     * CheckM2

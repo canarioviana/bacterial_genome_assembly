@@ -1,6 +1,6 @@
 # Bash Scripts for Bacterial Genome Assembly
 
-This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly from short or long reads** and **genome annotation**.
+This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly from short paired-end reads (Illumina) or single-end long-reads (PacBio/ONT)** and **genome annotation**.
 
 It also includes detailed instructions for the installation of all necessary software.
 
@@ -29,7 +29,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ---
 
-## 🛠️ The Short-Reads Genome Assembly Workflow
+## 🛠️ The Short Paired-End Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
     * Download reads from NCBI SRA (SRA Tools)
@@ -92,6 +92,7 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an inhouse script
+
 
 
 

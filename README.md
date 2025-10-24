@@ -44,7 +44,7 @@ It also includes detailed instructions for the installation of all necessary sof
     * FastQC
     * MultiQC
 5) De novo assembly
-    * Unicycler
+    * Unicycler (end-to-end workflow)
     * Shovill
     * SPAdes
 6) Organizing de novo assembly files
@@ -92,5 +92,6 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an inhouse script
+
 
 

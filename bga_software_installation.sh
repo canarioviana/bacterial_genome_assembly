@@ -173,10 +173,12 @@ mkdir /db/checkm2
 cd
 git clone --recursive https://github.com/chklovski/checkm2.git
 cd checkm2
-conda env create -n checkm2 -f checkm2.yml
+conda env create -n checkm2 -f checkm2.yml -y
 conda activate checkm2
 python setup.py install
 checkm2 -h
+cd ..
+rm -r checkm2
 checkm2 database --download --path /db/checkm2
 conda env config vars set CHECKM2DB="$(find /db/checkm2 -type f -name "*.dmnd" -print -quit)"
 conda deactivate

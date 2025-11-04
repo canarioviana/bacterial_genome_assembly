@@ -39,7 +39,7 @@
 # Miniconda (For a single user. Local computer.)
 # Download the installer
 cd
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x87_64.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 sh Miniconda3-latest-Linux-x87_64.sh
 # Follow the instructions to install Miniconda in /home/$USER/miniconda3
 
@@ -97,7 +97,7 @@ sudo chgrp $USER /db
 sudo su
 cd
 # Download the installer
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x87_64.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 sh Miniconda3-latest-Linux-x87_64.sh
 # Follow the instructions and install Miniconda in /usr/local/miniconda3
 

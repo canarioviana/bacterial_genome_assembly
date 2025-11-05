@@ -156,12 +156,28 @@ source ~/.bashrc
 # Create a directory
 sudo mkdir /db
 
-# IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
+# ⚠️ IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
 
 
 ##########################################################################
 ## B.2) Software installation - Genome assembly
 ##########################################################################
+
+# ⚠️ IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
+# To log in as root you should execute the command line below and type the password:
+# sudo su
+# To leave, execute the command line below
+# exit
+
+# Ckeck the software manuals for database installation
+
+# After download a database in /db/, give all users the permission to access the directories
+# Give to all users the permission to read databases directories (+x is necessary for directories) 
+sudo find /db/ -type d -exec chmod a+rx {} \;
+# Give to all users the permission to read databases files
+sudo find /db/ -type f -exec chmod a+r {} \;
+# OR give to all users the permission to read databases directories and files
+sudo chmod -R o+rx /db
 
 ##########################################################################
 # barrnap (Evaluate the completeness of rRNA genes)

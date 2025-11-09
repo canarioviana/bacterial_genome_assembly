@@ -379,7 +379,7 @@ conda deactivate
 
 ##########################################################################
 # EggNOG-mapper (Gene functional annotation)
-conda create -n eggnog-mapper -c bioconda eggnog-mapper=2.1.12 -y
+conda create -n eggnog-mapper -c bioconda eggnog-mapper=2.1.13 -y
 conda activate eggnog-mapper
 conda env config vars set EGGNOG_DATA_DIR="/db/eggnog/"
 conda deactivate

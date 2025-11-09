@@ -413,7 +413,7 @@ conda deactivate
 
 ##########################################################################
 # Prokka (Genome annotation)
-conda create -n prokka -c bioconda prokka -y
+conda create -n prokka -c conda-forge prokka -y
 
 ##########################################################################
 # RGI (Antimicrobial resistance prediction)

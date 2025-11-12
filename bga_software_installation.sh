@@ -362,6 +362,15 @@ sudo apt-get install zip -y
 ## B.3) Software installation - Genome annotation
 ##########################################################################
 
+############################################################
+# AMRFinderPlus (Virulence and antimicrobial resistance prediction)
+# https://github.com/ncbi/amr
+conda create -c conda-forge -c bioconda -n amrfinder --strict-channel-priority ncbi-amrfinderplus -y
+conda activate amrfinder
+mkdir /db/amrfinder
+amrfinder_update -d /db/amrfinder
+conda deactivate
+
 ##########################################################################
 # COG classifier (Gene functional annotation)
 conda create -n cogclassifier -c bioconda -c conda-forge cogclassifier -y
@@ -376,6 +385,18 @@ conda activate crisprcasfinder
 mamba install -c bioconda macsyfinder=2.1.2 -y
 macsydata install -u CASFinder==3.1.0
 conda deactivate
+
+############################################################
+# dbCAN (tested version: 5.2.1)
+# https://github.com/bcb-unl/run_dbcan
+conda create -n dbcan -c bioconda -c conda-forge dbcan -y
+mkdir /db/dbcan
+# Download the database manually
+# wget https://bcb.unl.edu/dbCAN2/download/run_dbCAN_database_total/CAZy.dmnd -P /db/dbcan
+# wget https://bcb.unl.edu/dbCAN2/download/run_dbCAN_database_total/dbCAN_sub.hmm -P /db/dbcan
+# Or download the database using the software
+conda activate dbcan
+run_dbcan database --db_dir /db/dbcan
 
 ##########################################################################
 # EggNOG-mapper (Gene functional annotation)

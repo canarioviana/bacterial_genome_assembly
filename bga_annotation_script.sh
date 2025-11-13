@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 12/10/2025
+# Date: 13/11/2025
 # More info: see README.md in the repository
 
 
@@ -97,9 +97,65 @@ cd ..
 ############################################################
 
 ############################################################
-## VFanalyzer (Virulence gene prediction)
-# http://www.mgc.ac.cn/VFs/
+## AMRFinderPlus
 
+# Create an output directory
+mkdir -p 12_amrfinder
+
+# Activate Conda environment
+conda activate amrfinder
+# Loop through a list of sample files
+for file in 11_genome_annotation/*/*.faa; do
+    # Extract sample name
+    # Extract file name
+    filename=${file##*/}
+    # Extract sample name
+    sample=${filename%%.faa}
+    
+    # Inform current sample
+    echo "AMRFinderPlus is processing sample: ${sample} (${i}/${sample_count})"
+    # Start counting the running time
+    start_time=$SECONDS
+
+    # Method 1 - Run AMRFinderPlus using nucleotide and proteins sequences
+    # Format faa files for AMRFinderPlus
+    awk '{
+      if ($0 ~ /^>/) {
+        match($0, /^>([^ ]+)/, a)
+        id=a[1]
+        sub(/ID=[^;]+/, "ID="id)
+        print
+      } else print
+    }' "${file}" > "12_amrfinder/${sample}_amrfinder_format.faa" 
+    # Run main software
+    amrfinder \
+    --threads $(nproc --ignore=1) \
+    --database /db/amrfinder/latest \
+    --plus \
+    --annotation_format prokka \
+    --nucleotide "11_genome_annotation/${sample}/${sample}.fsa" \
+    --protein "12_amrfinder/${sample}_amrfinder_format.faa"  \
+    --gff "11_genome_annotation/${sample}/${sample}.gff" \
+    --name "${sample}" \
+    --nucleotide_output "12_amrfinder/${sample}_amrfinder.fasta"\
+    --protein_output "12_amrfinder/${sample}_amrfinder.faa"\
+    --output "12_amrfinder/${sample}_amrfinder.tsv"
+    # Remove intermediate file
+    rm "12_amrfinder/${sample}_amrfinder_format.faa"
+
+    # # Method 2 - Run AMRFinderPlus using only proteins sequences
+    # # Run main software
+    # amrfinder \
+    # --threads $(nproc --ignore=1) \
+    # --database /db/amrfinder/latest \
+    # --plus \
+    # --protein "${file}"  \
+    # --name "${sample}" \
+    # --protein_output "12_amrfinder/${sample}_amrfinder.faa"\
+    # --output "12_amrfinder/${sample}_amrfinder.tsv"
+done
+# Deactivate Conda environment
+conda activate base
 
 ############################################################
 ## PanViTa (Virulence and antimicrobial resistance prediction)
@@ -121,6 +177,10 @@ cd ..
 zip -r 12_panvita.zip 12_panvita
 # Delete the output directory
 rm -r 12_panvita
+
+############################################################
+## ResFinder (Antimicrobial resistance prediction)
+# http://genepi.food.dtu.dk/resfinder
 
 ############################################################
 ## RGI (Antimicrobial resistance prediction)
@@ -150,26 +210,13 @@ zip -r 12_rgi.zip 12_rgi
 rm -r 12_rgi
 
 ############################################################
-## ResFinder (Antimicrobial resistance prediction)
-# http://genepi.food.dtu.dk/resfinder
+## VFanalyzer (Virulence gene prediction)
+# http://www.mgc.ac.cn/VFs/
 
 
 ############################################################
 ## 12) Genome annotation - Mobile Genetic Elements
 ############################################################
-
-############################################################
-## PHASTEST (Prophage prediction)
-
-# https://phastest.ca/
-# Send the GenBank file (*.gb, *.gbk or *.gbff) or the chromosome file (*.fasta)
-
-############################################################
-## PHASTER (Prophage prediction)
-
-# https://phaster.ca/
-# Send the GenBank file (*.gb, *.gbk or *.gbff) or chromosome file (*.fasta)
-
 
 ############################################################
 ## CRISPRcasFinder local (CRISPR/Cas system prediction)
@@ -227,9 +274,53 @@ rm -r 12_crisprcasfinder
 
 ############################################################
 ## CRISPRcasFinder online (CRISPR/Cas system prediction)
-
 # https://crisprcas.i2bc.paris-saclay.fr/CrisprCasFinder/Index
 # Send the chromosome file (*.fasta)
+
+############################################################
+## PHASTER (Prophage prediction)
+
+# https://phaster.ca/
+# Send the GenBank file (*.gb, *.gbk or *.gbff) or chromosome file (*.fasta)
+
+############################################################
+## PHASTEST (Prophage prediction)
+
+# https://phastest.ca/
+# Send the GenBank file (*.gb, *.gbk or *.gbff) or the chromosome file (*.fasta)
+
+############################################################
+## VIBRANT
+# Create an output directory
+mkdir -p 12_vibrant
+
+# Activate Conda environment
+conda activate vibrant
+# Loop through a list of sample files
+for file in 11_genome_annotation/*/*.fsa; do
+    # Extract file name
+    filename=${file##*/}
+    # Extract sample name
+    sample=${filename%%_*}
+    
+    # Inform current sample
+    echo "VIBRANT is processing sample: ${sample} (${i}/${sample_count})"
+    # Start counting the running time
+    start_time=$SECONDS
+
+    # Create output directory
+    mkdir -p "12_vibrant/${sample}_vibrant"
+
+    # Run main software
+    VIBRANT_run.py \
+    -t $(nproc --ignore=1) \
+    -f nucl \
+    -d /db/vibrant/databases/ \
+    -i "${file}" \
+    -folder "12_vibrant/${sample}_vibrant"
+done
+# Deactivate Conda environment
+conda activate base
 
 
 ############################################################
@@ -330,3 +421,45 @@ rm -r 12_cogclassifier
 ## Blastkoala (Gene functional annotation)
 
 # https://www.kegg.jp/blastkoala/
+
+############################################################
+## dbCAN 
+
+# Create an output directory
+mkdir -p 12_dbcan
+
+# Activate Conda environment
+conda activate dbcan
+# Loop through a list of sample files
+for file in 11_genome_annotation/*/*.faa; do
+    # Extract sample name
+    # Extract file name
+    filename=${file##*/}
+    # Extract sample name
+    sample=${filename%%.faa}
+
+    # Create output directory
+    mkdir -p "12_dbcan/${sample}_dbcan"
+
+    # Run main software
+    run_dbcan CAZyme_annotation \
+    --threads $(nproc --ignore=1) \
+    --db_dir /db/dbcan \
+    --mode protein \
+    --input_raw_data $file \
+    --output_dir "12_dbcan/${sample}_dbcan"
+
+    # Rename output files
+    for outputfile in 12_dbcan/${sample}_dbcan/*; do
+            outputfilename=${outputfile##*/}
+        mv ${outputfile} "12_dbcan/${sample}_dbcan/${sample}_${outputfilename}"
+    done
+done
+# Deactivate Conda environment
+conda activate base
+
+# Compress directory
+echo "Compressing output directory"
+tar -c --use-compress-program=pigz -f 12_dbcan.tar.gz 12_dbcan
+# Create checksum file
+md5sum 12_dbcan.tar.gz > 12_dbcan.tar.gz.md5

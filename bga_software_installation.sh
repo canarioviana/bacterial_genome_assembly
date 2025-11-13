@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 18/10/2025
+# Date: 13/11/2025
 # More info: see README.md in the repository
 
 
@@ -163,13 +163,14 @@ sudo mkdir /db
 ## B.2) Software installation - Genome assembly
 ##########################################################################
 
-# Check the software manuals for database installation
-
-# ⚠️ IMPORTANT! If you installed Miniconda as root, log in as root before creating a Conda environment to make it available to all users.
+# ⚠️ IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
 # To log in as root you should execute the command line below and type the password:
 # sudo su
 # To leave, execute the command line below
 # exit
+
+# Ckeck the software manuals for database installation
+
 # After download a database in /db/, give all users the permission to access the directories
 # Give to all users the permission to read databases directories (+x is necessary for directories) 
 sudo find /db/ -type d -exec chmod a+rx {} \;
@@ -246,7 +247,7 @@ wget -c --progress=bar https://data.gtdb.ecogenomic.org/releases/latest/auxillar
 # wget -c --progress=bar https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
 # echo '24b476ea5a4ef30519d461e56cc4a27f gtdbtk_data.tar.gz' | md5sum -c #md5sum for version r226
 tar -xvzf gtdbtk_data.tar.gz -C "/db/gtdbtk" --strip 1 > /dev/null
-conda create -n gtdbtk -c bioconda python=3.10 gtdbtk=2.4.1 -y
+conda create -n gtdbtk -c bioconda gtdbtk=2.4.1 -y
 conda activate gtdbtk
 conda env config vars set GTDBTK_DATA_PATH="/db/gtdbtk"
 conda deactivate
@@ -362,8 +363,8 @@ sudo apt-get install zip -y
 ## B.3) Software installation - Genome annotation
 ##########################################################################
 
-############################################################
-# AMRFinderPlus (Virulence and antimicrobial resistance prediction)
+##########################################################################
+# AMRFinderPlus (tested version: 4.0.23)
 # https://github.com/ncbi/amr
 conda create -c conda-forge -c bioconda -n amrfinder --strict-channel-priority ncbi-amrfinderplus -y
 conda activate amrfinder
@@ -391,16 +392,14 @@ conda deactivate
 # https://github.com/bcb-unl/run_dbcan
 conda create -n dbcan -c bioconda -c conda-forge dbcan -y
 mkdir /db/dbcan
-# Download the database manually
 # wget https://bcb.unl.edu/dbCAN2/download/run_dbCAN_database_total/CAZy.dmnd -P /db/dbcan
 # wget https://bcb.unl.edu/dbCAN2/download/run_dbCAN_database_total/dbCAN_sub.hmm -P /db/dbcan
-# Or download the database using the software
 conda activate dbcan
 run_dbcan database --db_dir /db/dbcan
 
 ##########################################################################
 # EggNOG-mapper (Gene functional annotation)
-conda create -n eggnog-mapper -c bioconda eggnog-mapper=2.1.13 -y
+conda create -n eggnog-mapper -c bioconda eggnog-mapper -y
 conda activate eggnog-mapper
 conda env config vars set EGGNOG_DATA_DIR="/db/eggnog/"
 conda deactivate
@@ -434,11 +433,20 @@ conda deactivate
 
 ##########################################################################
 # Prokka (Genome annotation)
-conda create -n prokka -c conda-forge prokka -y
+conda create -n prokka -c bioconda prokka -y
 
 ##########################################################################
 # RGI (Antimicrobial resistance prediction)
 conda create -n rgi -c conda-forge -c bioconda -c defaults rgi -y
+
+############################################################
+# VIBRANT (tested version: 1.2.1)
+# https://github.com/AnantharamanLab/VIBRANT
+conda create -n vibrant -c bioconda vibrant -y
+conda activate vibrant
+mkdir /db/vibrant
+download-db.sh /db/vibrant
+conda deactivate
 
 ##########################################################################
 ## C) Connecting to a server and using Screen

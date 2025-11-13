@@ -1195,7 +1195,7 @@ for assembly in 10_assemblies_for_analysis/*.fsa; do
     # Inform sample
     echo "Analyzing $sample"
     # Loop through a list of files (mob-suite result files)
-    while IFS=$'\t' read -r sample_id molecule_type primary_cluster_id secondary_cluster_id contig_id others; do
+    awk '1' 9_mobsuite/"$sample"_mobsuite/contig_report.txt | while IFS=$'\t' read -r sample_id molecule_type primary_cluster_id secondary_cluster_id contig_id others; do
         # Ignore column names
         if [ "$sample_id" == "sample_id" ]; then
             continue
@@ -1218,7 +1218,7 @@ for assembly in 10_assemblies_for_analysis/*.fsa; do
             # Replace old header with the new one
             sed -i "s/^>${contig_id}/>${new_contig_id}/" $assembly
         fi
-    done < 9_mobsuite/"$sample"_mobsuite/contig_report.txt
+    done
 done
 # Compress the output directory
 zip -r 10_assemblies_for_analysis.zip 10_assemblies_for_analysis

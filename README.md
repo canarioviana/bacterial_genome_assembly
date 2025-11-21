@@ -60,7 +60,7 @@ It also includes detailed instructions for the installation of all necessary sof
 9) Plasmids identification
     * MOB-suite 
 10) Assignment of contigs to molecules
-    * MOB-suite and an inhouse script
+    * MOB-suite and an in-house script
 
 ---
 
@@ -91,7 +91,8 @@ It also includes detailed instructions for the installation of all necessary sof
 9) Plasmids identification
     * MOB-suite 
 10) Assignment of contigs to molecules
-    * MOB-suite and an inhouse script
+    * MOB-suite and an in-house script
+
 
 
 

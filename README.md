@@ -29,7 +29,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ---
 
-## 🛠️ The Short Paired-End Reads Genome Assembly Workflow
+## The Short Paired-End Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
     * Download reads from NCBI SRA (SRA Tools)
@@ -64,7 +64,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ---
 
-## 🛠️ The Long-Reads Genome Assembly Workflow
+## The Long-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
     * Download reads from NCBI SRA (SRA Tools)
@@ -92,6 +92,7 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an in-house script
+
 
 
 

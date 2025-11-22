@@ -6,7 +6,7 @@ It also includes detailed instructions for the installation of all necessary sof
 
 ---
 
-## 📋 Usage Guidelines
+## Usage Guidelines
 
 * The scripts provide comprehensive **software installation instructions**, **a worfkflow for genome assembly with guidelines for genome and sequencing reads submission** and **a worfkflow for genome annotation**
 
@@ -92,6 +92,7 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an in-house script
+
 
 
 

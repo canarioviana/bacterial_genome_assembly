@@ -2,7 +2,7 @@
 # Bash script for downloading genome sequencing reads from NCBI Read Sequencing Archive (SRA)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 20/10/2025
+# Date: 02/12/2025
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #

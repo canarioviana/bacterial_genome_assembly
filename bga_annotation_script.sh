@@ -119,15 +119,6 @@ for file in 11_genome_annotation/*/*.faa; do
     start_time=$SECONDS
 
     # Method 1 - Run AMRFinderPlus using nucleotide and proteins sequences
-    # Format faa files for AMRFinderPlus
-    awk '{
-      if ($0 ~ /^>/) {
-        match($0, /^>([^ ]+)/, a)
-        id=a[1]
-        sub(/ID=[^;]+/, "ID="id)
-        print
-      } else print
-    }' "${file}" > "12_amrfinder/${sample}_amrfinder_format.faa" 
     # Run main software
     amrfinder \
     --threads $(nproc --ignore=1) \
@@ -135,14 +126,12 @@ for file in 11_genome_annotation/*/*.faa; do
     --plus \
     --annotation_format prokka \
     --nucleotide "11_genome_annotation/${sample}/${sample}.fsa" \
-    --protein "12_amrfinder/${sample}_amrfinder_format.faa"  \
+    --protein "11_genome_annotation/${sample}/${sample}.faa"  \
     --gff "11_genome_annotation/${sample}/${sample}.gff" \
     --name "${sample}" \
     --nucleotide_output "12_amrfinder/${sample}_amrfinder.fasta"\
     --protein_output "12_amrfinder/${sample}_amrfinder.faa"\
     --output "12_amrfinder/${sample}_amrfinder.tsv"
-    # Remove intermediate file
-    rm "12_amrfinder/${sample}_amrfinder_format.faa"
 
     # # Method 2 - Run AMRFinderPlus using only proteins sequences
     # # Run main software

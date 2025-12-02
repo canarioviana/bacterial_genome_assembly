@@ -3,6 +3,7 @@
 #
 # Author: Marcus Vinicius Canário Viana
 # Date: 20/10/2025
+# Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
 # Instructions:

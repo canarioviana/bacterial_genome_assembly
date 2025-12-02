@@ -2,7 +2,8 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 13/11/2025
+# Date: 02/12/2025
+# Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
 # Instructions:

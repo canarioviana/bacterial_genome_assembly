@@ -291,7 +291,7 @@ for file in 11_genome_annotation/*/*.fsa; do
     # Extract file name
     filename=${file##*/}
     # Extract sample name
-    sample=${filename%%_*}
+    sample=${filename%%.*}
     
     # Inform current sample
     echo "VIBRANT is processing sample: ${sample} (${i}/${sample_count})"

@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 02/12/2025
+# Date: 04/12/2025
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -273,7 +273,7 @@ for reads in 1_reads/*.fq.gz; do
     NanoPlot -t $(nproc --ignore=1) --fastq ${reads} -p "${sample}_" -o "2_nanoplot/${sample}"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 2_nanoplot.zip 2_nanoplot
 # Delete the output directory
@@ -326,7 +326,7 @@ for reads in 1_reads/*.fq.gz; do
     | gzip > 3_chopper/"${sample}_trimmed.fq.gz"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # ############################################################
 # ## Fastplong
@@ -374,7 +374,7 @@ conda activate base
 #     --json 3_fastplong/"$sample"_fastp.json
 # done
 # # Deactivate Conda environment
-# conda activate base
+# conda deactivate
 # # Compress report files
 # zip -r 3_fastplong.zip 3_fastplong/*.json 3_fastplong/*.html
 # # Delete report files
@@ -471,7 +471,7 @@ for reads in 3_chopper/*.fq.gz; do
     echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
     kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 
     # Estimate genome size using GenomeScope
     # Activate Conda environment
@@ -483,7 +483,7 @@ for reads in 3_chopper/*.fq.gz; do
     -i kmc_histogram.tsv \
     -o "${genomesizedir}/genomescope"
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 
     # Verify that summary.txt exists
     summary_file="${genomesizedir}/genomescope/summary.txt"
@@ -563,7 +563,7 @@ for reads in 3_chopper/*.fq.gz; do
     NanoPlot -t $(nproc --ignore=1) --fastq ${reads} -p "${sample}_" -o "4_nanoplot/${sample}"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 4_nanoplot.zip 4_nanoplot
 # Delete the output directory
@@ -601,7 +601,7 @@ for reads in 3_chopper/*.fq.gz; do
     -o 5_flye/"$sample"_flye
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress output files
 zip -r 5_flye.zip 5_flye
 
@@ -631,7 +631,7 @@ zip -r 5_flye.zip 5_flye
 #     --out-dir "5_metamdbg/${sample}_metamdbg"
 # done
 # # Deactivate Conda environment
-# conda activate base
+# conda deactivate
 # # Compress the output directory
 # zip -r 5_metamdbg.zip 5_metamdbg
 
@@ -661,7 +661,7 @@ zip -r 5_flye.zip 5_flye
 #     "$reads" "$seq_type_myloasm"
 # done
 # # Deactivate Conda environment
-# conda activate base
+# conda deactivate
 # # Compress the output directory
 # zip -r 5_myloasm.zip 5_myloasm
 
@@ -725,7 +725,7 @@ zip -r 5_flye.zip 5_flye
 #     mv pid* ${sample}.fofn ${sample}.cfg "${working_dir}"
 # done
 # # Deactivate Conda environment
-# conda activate base
+# conda deactivate
 # # Compress the output directory
 # zip -r 5_nextdenovo.zip 5_nextdenovo
 
@@ -757,7 +757,7 @@ zip -r 5_flye.zip 5_flye
 #     > "5_raven/${sample}_raven/${sample}_raven.fasta"
 # done
 # # Deactivate Conda environment
-# conda activate base
+# conda deactivate
 # # Delete temporary file
 # rm raven.cereal
 # # Compress the output directory
@@ -869,7 +869,7 @@ checkm2 predict \
 --input 6_assemblies \
 --output-directory 7_checkm
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Copy and rename the output file
 cp 7_checkm/quality_report.tsv 7_checkm2.tsv
 # Delete the output directory
@@ -907,7 +907,7 @@ for file in 7_gunc/diamond_output/*.out; do\
    --out_dir 7_gunc/plot;\
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 7_gunc.zip 7_gunc
 # Delete the output directory
@@ -925,7 +925,7 @@ conda activate quast
 # Run the program
 quast.py -m 0 -o 7_quast 6_assemblies/*.fasta
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 cp 7_quast/transposed_report.tsv 7_quast.tsv
 # Compress the output directory
 zip -r 7_quast.zip 7_quast
@@ -963,7 +963,7 @@ for file in 6_assemblies/*.fasta; do
     > "7_barrnap/${prefix}_arc_barrnap.gff"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 7_barrnap.zip 7_barrnap
 # Delete the output directory
@@ -1037,7 +1037,7 @@ zip -r 8_gtdbtk.zip 8_gtdbtk
 # Delete the output directory
 rm -r 8_gtdbtk
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 ############################################################
 ## TYGS
@@ -1071,7 +1071,7 @@ for file in 6_assemblies/*.fasta; do
     --outdir 9_mobsuite/${sample}_mobsuite
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Merge contig_report.txt files
 # Delete merged file if it exists

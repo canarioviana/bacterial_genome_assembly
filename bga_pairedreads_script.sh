@@ -1,7 +1,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 02/12/2025
+# Date: 04/12/2025
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -149,7 +149,7 @@ if [ -f 1_reads_accessions.tsv ]; then
     done
     echo "Download process complete. Deactivating the environment."
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 else
     echo "The file 1_reads_accessions.tsv was not found. Proceeding using local files."
 fi
@@ -169,7 +169,7 @@ conda activate fastqc
 # Run FastQC
 fastqc -t $(nproc --ignore=1) 1_reads/*.fq.gz -o 2_fastqc
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 2_fastqc.zip 2_fastqc
 
@@ -181,7 +181,7 @@ conda activate multiqc
 # Run MultiQC
 multiqc 2_fastqc/*_fastqc.zip -o 2_fastqc_multiqc
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 2_fastqc_multiqc.zip 2_fastqc_multiqc
 # Delete the output directory
@@ -239,7 +239,7 @@ for r1 in 1_reads/*_1.fq.gz; do
         --json "3_fastp/${sample}_trimmed_fastp.json"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress report files
 zip -r 3_fastp.zip 3_fastp/*.json 3_fastp/*.html
 # Delete report files
@@ -297,7 +297,7 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     echo "Generating k-mers histogram from the sequencing reads of sample ${sample}"
     kmc_tools transform kmc_count histogram kmc_histogram.tsv -cx10000
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 
     # Estimate genome size using GenomeScope
     # Activate Conda environment
@@ -309,7 +309,7 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     -i kmc_histogram.tsv \
     -o "${genomesizedir}/genomescope"
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 
     # Verify that summary.txt exists
     summary_file="${genomesizedir}/genomescope/summary.txt"
@@ -361,7 +361,7 @@ for r1 in 3_fastp/*_trimmed_1.fq.gz; do
     -o "3_fastp/${output_r2}" \
     "${r1}" "${r2}"
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 
     # Delete the original trimmed reads files
     rm "${r1}" "${r2}"
@@ -386,7 +386,7 @@ conda activate fastqc
 # Run FastQC
 fastqc -t $(nproc --ignore=1) 3_fastp/*.fq.gz -o 4_fastqc
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 4_fastqc.zip 4_fastqc
 
@@ -398,7 +398,7 @@ conda activate multiqc
 # Run MultiQC
 multiqc 4_fastqc/*_fastqc.zip -o 4_fastqc_multiqc
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 4_fastqc_multiqc.zip 4_fastqc_multiqc
 # Delete the output directory
@@ -441,7 +441,7 @@ for r1 in 3_fastp/*_1.fq.gz; do
     -o "5_unicycler/${sample}_unicycler"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 5_unicycler.zip 5_unicycler
 
@@ -478,7 +478,7 @@ for r1 in 3_fastp/*_1.fq.gz; do
     --outdir "5_shovill/${sample}_shovill"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 5_shovill.zip 5_shovill
 
@@ -525,7 +525,7 @@ for r1 in 3_fastp/*_1.fq.gz; do
     > 5_spades/"$sample"_spades/contigs_seqkit.fasta
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 5_spades.zip 5_spades
 
@@ -614,7 +614,7 @@ checkm2 predict \
 --input 6_assemblies \
 --output-directory 7_checkm
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Copy and rename the output file
 cp 7_checkm/quality_report.tsv 7_checkm2.tsv
 # Delete the output directory
@@ -648,7 +648,7 @@ for file in 7_gunc/diamond_output/*.out; do\
    --out_dir 7_gunc/plot;\
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 7_gunc.zip 7_gunc
 # Delete the output directory
@@ -662,7 +662,7 @@ conda activate quast
 # Run the program
 quast.py -m 0 -o 7_quast 6_assemblies/*.fasta
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 cp 7_quast/transposed_report.tsv 7_quast.tsv
 # Compress the output directory
 zip -r 7_quast.zip 7_quast
@@ -696,7 +696,7 @@ for file in 6_assemblies/*.fasta; do
     > "7_barrnap/${prefix}_arc_barrnap.gff"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 # Compress the output directory
 zip -r 7_barrnap.zip 7_barrnap
 # Delete the output directory
@@ -767,7 +767,7 @@ zip -r 8_gtdbtk.zip 8_gtdbtk
 # Delete the output directory
 rm -r 8_gtdbtk
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 ############################################################
 ## TYGS
@@ -797,7 +797,7 @@ for file in 6_assemblies/*.fasta; do
     --outdir 9_mobsuite/${sample}_mobsuite
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Merge contig_report.txt files
 # Delete merged file if it exists

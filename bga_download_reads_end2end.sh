@@ -122,7 +122,7 @@ if [ -f 1_reads_accessions.tsv ]; then
     done < 1_reads_accessions.tsv
     echo "Download process complete. Deactivating the environment."
     # Deactivate Conda environment
-    conda activate base
+    conda deactivate
 else
     echo "The file 1_reads_accessions.tsv was not found."
     exit 1

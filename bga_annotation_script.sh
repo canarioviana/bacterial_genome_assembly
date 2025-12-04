@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 02/12/2025
+# Date: 04/12/2025
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 
@@ -42,7 +42,7 @@ for file in 10_assemblies_for_analysis/*.fsa; do
     $file
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Generate annotation summary files
 echo -e "Sample\tGene\tCDS\trRNA\ttRNA\ttmRNA" > 11_genome_annotation.tsv
@@ -145,7 +145,7 @@ for file in 11_genome_annotation/*/*.faa; do
     # --output "12_amrfinder/${sample}_amrfinder.tsv"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 ############################################################
 ## PanViTa (Virulence and antimicrobial resistance prediction)
@@ -190,7 +190,7 @@ for file in 11_genome_annotation/*/*.faa; do
     echo >> 12_rgi/rgi_all.txt #Empty line
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Copy the summary file to main directory
 cp 12_rgi/rgi_all.txt 12_rgi.tsv
@@ -229,7 +229,7 @@ for file in ../11_genome_annotation/*/*.fsa; do
     perl CRISPRCasFinder.pl -cas -html -in $file -out "${prefix}"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Remove the CRISPRCasFinder files from the current directory
 rm -r CasFinder-2.0.3 ccf.environment.yml COPYING COPYRIGHT CRISPRCasFinder* crispr-cas_logo.png *.sh *.txt install_test README.md sel392v2.so singularity supplementary_files supplementary_tools
@@ -242,7 +242,7 @@ for directory in */; do
     echo -e "\n" >> CRISPR-Cas_summary_all.tsv
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Edit the summary file header
 sed -i 's/Evidence-levels/Nb_arrays_evidence-level_1\tNb_arrays_evidence-level_2\tNb_arrays_evidence-level_3\tNb_arrays_evidence-level_4/g' CRISPR-Cas_summary_all.tsv
@@ -310,7 +310,7 @@ for file in 11_genome_annotation/*/*.fsa; do
     -folder "12_vibrant/${sample}_vibrant"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 
 ############################################################
@@ -338,7 +338,7 @@ fastmlst \
 --splited-output 12_fastmlst/mlst_alleles \
 11_genome_annotation/*/*.fsa
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Remove the "." from the sample name
 sed -i s/.fsa// 12_fastmlst/fastmlst.tsv
@@ -378,7 +378,7 @@ for file in 11_genome_annotation/*/*.faa; do
     tail +5 12_eggnog_mapper/"${prefix}".emapper.annotations > 12_eggnog_mapper/"${prefix}".emapper.annotations.tsv
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Compress the output directory
 zip -r 12_eggnog_mapper.zip 12_eggnog_mapper
@@ -400,7 +400,7 @@ for file in 11_genome_annotation/*/*.faa; do
     COGclassifier -t $(nproc --ignore=1) -i $file -o 12_cogclassifier/"${prefix}"
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Compress the output directory
 zip -r 12_cogclassifier.zip 12_cogclassifier
@@ -446,7 +446,7 @@ for file in 11_genome_annotation/*/*.faa; do
     done
 done
 # Deactivate Conda environment
-conda activate base
+conda deactivate
 
 # Compress directory
 echo "Compressing output directory"

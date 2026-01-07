@@ -114,9 +114,7 @@ for file in 11_genome_annotation/*/*.faa; do
     sample=${filename%%.faa}
     
     # Inform current sample
-    echo "AMRFinderPlus is processing sample: ${sample} (${i}/${sample_count})"
-    # Start counting the running time
-    start_time=$SECONDS
+    echo "AMRFinderPlus is processing sample: ${sample}"
 
     # Method 1 - Run AMRFinderPlus using nucleotide and proteins sequences
     # Run main software
@@ -294,7 +292,7 @@ for file in 11_genome_annotation/*/*.fsa; do
     sample=${filename%%.*}
     
     # Inform current sample
-    echo "VIBRANT is processing sample: ${sample} (${i}/${sample_count})"
+    echo "VIBRANT is processing sample: ${sample}"
     # Start counting the running time
     start_time=$SECONDS
 

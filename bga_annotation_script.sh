@@ -145,6 +145,11 @@ done
 # Deactivate Conda environment
 conda deactivate
 
+# Compress the output directory
+zip -r 12_amrfinder.zip 12_amrfinder
+# Delete the output directory
+rm -r 12_amrfinder
+
 ############################################################
 ## PanViTa (Virulence and antimicrobial resistance prediction)
 

@@ -844,7 +844,7 @@ rm -r 5_flye
 # rm -r 5_metamdbg
 # rm -r 5_myloasm
 # rm -r 5_nextdenovo
-rm -r 5_raven
+# rm -r 5_raven
 
 
 ############################################################

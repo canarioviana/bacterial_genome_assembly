@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 04/12/2025
+# Date: 25/01/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -425,7 +425,7 @@ echo "# Estimating genome size"
 echo "############################################################"
 
 # Create output directory
-mkdir 3_genomesize
+mkdir -p 3_genomesize
 # Create output table file
 > 3_genomesize.tsv
 
@@ -447,7 +447,7 @@ for reads in 3_chopper/*.fq.gz; do
 
     # Create directory for the genome size estimation results
     genomesizedir="3_genomesize/${sample}_genomesize"
-    mkdir ${genomesizedir}
+    mkdir -p ${genomesizedir}
     
     # Count k-mers using KMC
     # Activate Conda environment
@@ -455,7 +455,7 @@ for reads in 3_chopper/*.fq.gz; do
     # Count k-mers
     echo "Counting k-mers from the sequencing reads of sample ${sample}"
     # Create kmc temporary directory
-    mkdir kmc_tmp
+    mkdir -p kmc_tmp
     # Create kmc list of input read files
     ls -1 ${reads} > kmc_input_reads.txt
     kmc \
@@ -519,12 +519,10 @@ for reads in 3_chopper/*.fq.gz; do
     mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
     # Delete the directory kmc_tmp
     rm -r kmc_tmp
-
-    # Compress and delete output directory
-    zip -r 3_genomesize.zip 3_genomesize
-    rm -r 3_genomesize
 done
-
+# Compress and delete output directory
+zip -r 3_genomesize.zip 3_genomesize
+rm -r 3_genomesize
 
 ############################################################
 ## 4) Trimmed reads quality assessment

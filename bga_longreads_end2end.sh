@@ -319,9 +319,10 @@ for reads in 1_reads/*.fq.gz; do
     # Run chopper
     chopper \
     -t $(nproc --ignore=1) \
-    --minlength 1000 \
+    --minlength 500 \
+    --quality 10 \
     --trim-approach trim-by-quality \
-    --cutoff 20 \
+    --cutoff 10 \
     -i "$reads" \
     | gzip > 3_chopper/"${sample}_trimmed.fq.gz"
 done

@@ -74,7 +74,7 @@ valid_options="--pacbio-raw | --pacbio-corr | --pacbio-hifi | --nano-raw | --nan
 # Check if the argument was provided
 if [ -z "$seq_type" ]; then
     echo "Error: You must provide the sequencing type."
-    echo "Options: --pacbio-raw | --pacbio-corr | --pacbio-hifi | --nano-raw | --nano-corr | --nano-hq"
+    echo "Options: $valid_options"
     echo "Usage: $0 <sequencing_type>"
     exit 1
 fi

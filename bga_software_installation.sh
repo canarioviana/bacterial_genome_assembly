@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 02/12/2025
+# Date: 20/03/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 
@@ -179,6 +179,14 @@ sudo find /db/ -type d -exec chmod a+rx {} \;
 sudo find /db/ -type f -exec chmod a+r {} \;
 # OR give to all users the permission to read databases directories and files
 sudo chmod -R o+rx /db
+
+##########################################################################
+# Autocycler
+wget https://github.com/rrwick/Autocycler/raw/refs/heads/main/pipelines/Conda_environment_file_by_Ryan_Wick/environment.yml
+conda env create --file environment.yml --name autocycler -y
+conda activate autocycler
+plassembler download -d "$CONDA_PREFIX"/plassembler_db
+conda deactivate
 
 ##########################################################################
 # barrnap (Evaluate the completeness of rRNA genes)

@@ -67,17 +67,16 @@ It also includes detailed instructions for the installation of all necessary sof
 ## The Long-Reads Genome Assembly Workflow
 
 1) Sequencing reads directory and files
-    * Download reads from NCBI SRA (SRA Tools)
     * Check local read files
 2) Raw reads quality assessment
     * NanoPlot
 3) Raw reads trimming and estimation of genome size
     * Chopper
-    * Estimation of genome size (KMC and GenomeScope)
 4) Trimmed reads quality assessment
     * NanoPlot
 5) De novo assembly
-    * Flye
+    * Autocycler -> dnaapler
+    * Medaka (optional)
 6) Organization of de novo assembly files
 7) Assembly quality assessment
     * CheckM2

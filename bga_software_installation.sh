@@ -390,6 +390,7 @@ conda create -n bakta -c bioconda bakta -y
 mkdir -p /db/bakta
 conda activate bakta
 bakta_db download --output /db/bakta --type full
+export BAKTA_DB=/db/bakta/db
 conda deactivate
 
 ##########################################################################

@@ -5,7 +5,7 @@
 # This file uses the .sh extension only to enable Bash syntax highlighting in text editors.
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 20/03/2026
+# Date: 21/03/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 
@@ -181,6 +181,10 @@ sudo find /db/ -type f -exec chmod a+r {} \;
 sudo chmod -R o+rx /db
 
 ##########################################################################
+# any2fasta (Extract fasta from gfa file)
+conda create -n any2fasta -c bioconda any2fasta -y
+
+##########################################################################
 # Autocycler
 wget https://github.com/rrwick/Autocycler/raw/refs/heads/main/pipelines/Conda_environment_file_by_Ryan_Wick/environment.yml
 conda env create --file environment.yml --name autocycler -y
@@ -189,7 +193,7 @@ plassembler download -d "$CONDA_PREFIX"/plassembler_db
 conda deactivate
 
 ##########################################################################
-# barrnap (Evaluate the completeness of rRNA genes)
+# Barrnap (Evaluate the completeness of rRNA genes)
 conda create -n barrnap -c bioconda barrnap -y
 
 ##########################################################################
@@ -212,8 +216,12 @@ echo $CHECKM2DB
 conda deactivate
 
 ###########################################################
-# chopper (Trim long reads)
+# Chopper (Trim long reads)
 conda create -n chopper -c bioconda chopper -y
+
+###########################################################
+# Dnaapler (Reorient circular sequences)
+conda create -n dnaapler -c bioconda dnaapler -y
 
 ##########################################################################
 # FastQC (Evaluate short reads quality)
@@ -223,17 +231,17 @@ conda create -n fastqc -c bioconda fastqc -y
 # Fastp (Trim short reads)
 conda create -n fastp -c bioconda fastp -y
 
-############################################################
-# Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
-conda create -n fastplong -c bioconda fastplong -y
+# ############################################################
+# # Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
+# conda create -n fastplong -c bioconda fastplong -y
 
-############################################################
-# Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
-git clone https://github.com/rrwick/Filtlong.git
-cd Filtlong
-make -j
-bin/filtlong -h
-sudo cp bin/filtlong /usr/local/bin
+# ############################################################
+# # Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
+# git clone https://github.com/rrwick/Filtlong.git
+# cd Filtlong
+# make -j
+# bin/filtlong -h
+# sudo cp bin/filtlong /usr/local/bin
 
 ############################################################
 # Flye (De novo genome assembly from long sequencing reads)
@@ -287,8 +295,12 @@ sudo apt-get install gzip -y
 conda create -n kmc -c bioconda kmc -y
 
 ############################################################
-# metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
-conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
+## Medaka (Polishing assemblies from Oxford Nanopore sequencing)
+conda create -n medaka -c conda-forge -c nanoporetech -c bioconda medaka -y
+
+# ############################################################
+# # metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
+# conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
 
 ##########################################################################
 # MOB-suite (Plasmid identification)
@@ -298,9 +310,9 @@ conda create -n mob_suite -c bioconda mob_suite -y
 # MultiQC (Unify read quality report)
 conda create -n multiqc -c bioconda multiqc -y
 
-############################################################
-# myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
-conda create -n myloasm -c bioconda myloasm -y
+# ############################################################
+# # myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# conda create -n myloasm -c bioconda myloasm -y
 
 ############################################################
 # NanoPlot (Evaluate long reads quality)
@@ -310,9 +322,9 @@ plotly_get_chrome -y
 #sudo find ${CONDA_PREFIX} -type d -name "browser_exe" -print0 | xargs -0 sudo chmod -R a+rwx
 conda deactivate
 
-############################################################
-# NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
-conda create -n nextdenovo -c bioconda nextdenovo -y
+# ############################################################
+# # NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# conda create -n nextdenovo -c bioconda nextdenovo -y
 
 ##########################################################################
 # Openssh (Access computer remotely)
@@ -331,9 +343,9 @@ conda create -n quast -c bioconda quast -y
 # Rasusa (Reads downsampling)
 conda create -n rasusa -c bioconda rasusa -y
 
-############################################################
-# Raven (De novo assembly from long reads)
-conda create -n raven -c bioconda raven-assembler -y
+# ############################################################
+# # Raven (De novo assembly from long reads)
+# conda create -n raven -c bioconda raven-assembler -y
 
 ##########################################################################
 # Rename (Rename files using regular expressions)
@@ -351,9 +363,9 @@ conda create -n seqkit -c bioconda seqkit -y
 # Screen (Software to use multiple screens in a terminal)
 sudo apt-get install screen -y
 
-##########################################################################
-# Shovill (De novo assembly from short reads)
-conda create -n spades -c bioconda shovill -y
+# ##########################################################################
+# # Shovill (De novo assembly from short reads)
+# conda create -n spades -c bioconda shovill -y
 
 ##########################################################################
 # SPAdes (De novo genome assembly from short reads or short and long reads)
@@ -371,6 +383,14 @@ sudo apt-get install zip -y
 ##########################################################################
 ## B.3) Software installation - Genome annotation
 ##########################################################################
+
+##########################################################################
+# Bakta
+conda create -n bakta -c bioconda bakta -y
+mkdir -p /db/bakta
+conda activate bakta
+bakta_db download --output /db/bakta --type full
+conda deactivate
 
 ##########################################################################
 # AMRFinderPlus (tested version: 4.0.23)

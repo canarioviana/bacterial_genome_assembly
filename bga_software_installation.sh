@@ -387,10 +387,13 @@ sudo apt-get install zip -y
 ##########################################################################
 # Bakta
 conda create -n bakta -c bioconda bakta -y
-mkdir -p /db/bakta
+mkdir -p /db/bakta/
 conda activate bakta
-bakta_db download --output /db/bakta --type full
-export BAKTA_DB=/db/bakta/db
+bakta_db download --output /db/bakta/full --type full # For full database (> 30GB)
+conda env config vars set BAKTA_DB="/db/bakta/db"
+# OR
+# bakta_db download --output /db/bakta/light --type light # For light database (> 1.34GB, faster annotation)
+# conda env config vars set BAKTA_DB="/db/bakta/db-light"
 conda deactivate
 
 ##########################################################################

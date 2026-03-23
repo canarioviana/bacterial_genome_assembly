@@ -13,9 +13,12 @@
 # Summary
 # A) System requirements
 # B) Software installation
-# B.1) Software installation - Miniconda
-# B.2) Software installation - Genome assembly
-# B.3) Software installation - Genome annotation
+# B.1) Software installation - Essential tools
+# B.2) Software installation - Miniconda
+# B.3) Software installation - Genome assembly from short reads
+# B.4) Software installation - Genome assembly from long reads
+# B.5) Software installation - Genome assembly quality assessment
+# B.6) Software installation - Genome annotation
 # C) Connecting to a server and using Screen
 # D) Sending all results to another computer
 
@@ -33,7 +36,50 @@
 ##########################################################################
 
 ##########################################################################
-## B.1) Software installation - Miniconda
+## B.1) Software installation - Essential tools
+##########################################################################
+
+##########################################################################
+# Git (Clone software directories from github.com)
+sudo apt-get update -y
+sudo apt-get install git -y
+
+##########################################################################
+# Openssh (Access computer remotely)
+sudo apt install openssh-server openssh-client
+sudo ufw allow ssh
+sudo ufw enable
+sudo ufw status
+sudo echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
+sudo systemctl restart ssh.service
+
+##########################################################################
+# Rename (Rename files using regular expressions)
+sudo apt-get install rename -y
+
+##########################################################################
+# Gzip (Compress and decompress directories and files)
+sudo apt-get install gzip -y
+
+##########################################################################
+# SRA Tools (Download reads from NCBI SRA)
+conda create -n sra-tools -c bioconda sra-tools -y
+
+##########################################################################
+# seqkit (Filter sequences by size)
+conda create -n seqkit -c bioconda seqkit -y
+
+##########################################################################
+# Screen (Software to use multiple screens in a terminal)
+sudo apt-get install screen -y
+
+##########################################################################
+# Zip (Compress and decompress directories and files)
+sudo apt-get install zip -y
+
+
+##########################################################################
+## B.2) Software installation - Miniconda
 ##########################################################################
 
 ##########################################################################
@@ -158,13 +204,6 @@ source ~/.bashrc
 sudo mkdir /db
 
 # ⚠️ IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
-
-
-##########################################################################
-## B.2) Software installation - Genome assembly
-##########################################################################
-
-# ⚠️ IMPORTANT! Log in as root before creating a Conda environment to make it available to all users.
 # To log in as root you should execute the command line below and type the password:
 # sudo su
 # To leave, execute the command line below
@@ -180,6 +219,52 @@ sudo find /db/ -type f -exec chmod a+r {} \;
 # OR give to all users the permission to read databases directories and files
 sudo chmod -R o+rx /db
 
+
+##########################################################################
+## B.3) Software installation - Genome assembly from short reads
+##########################################################################
+
+##########################################################################
+# FastQC (Evaluate short reads quality)
+conda create -n fastqc -c bioconda fastqc -y
+
+##########################################################################
+# Fastp (Trim short reads)
+conda create -n fastp -c bioconda fastp -y
+
+############################################################
+# GenomeScope (Estimation of genome size)
+conda create -n genomescope -c bioconda genomescope2 -y
+
+############################################################
+## KMC (K-mer counting of sequencing reads)
+conda create -n kmc -c bioconda kmc -y
+
+##########################################################################
+# MOB-suite (Plasmid identification)
+conda create -n mob_suite -c bioconda mob_suite -y
+
+##########################################################################
+# MultiQC (Unify read quality report)
+conda create -n multiqc -c bioconda multiqc -y
+
+############################################################
+# Rasusa (Reads downsampling)
+conda create -n rasusa -c bioconda rasusa -y
+
+# ##########################################################################
+# # Shovill (De novo assembly from short reads)
+# conda create -n spades -c bioconda shovill -y
+
+##########################################################################
+# Unicycler (De novo genome assembly from short reads or short and long sequencing reads)
+conda create -n unicycler -c bioconda unicycler -y
+
+
+##########################################################################
+## B.4) Software installation - Genome assembly from long reads
+##########################################################################
+
 ##########################################################################
 # any2fasta (Extract fasta from gfa file)
 conda create -n any2fasta -c bioconda any2fasta -y
@@ -192,6 +277,63 @@ conda activate autocycler
 conda install -c bioconda "dnaapler>=1.2.0" -y # Require for using gfa files as input
 plassembler download -d "$CONDA_PREFIX"/plassembler_db
 conda deactivate
+
+###########################################################
+# Chopper (Trim long reads)
+conda create -n chopper -c bioconda chopper -y
+
+###########################################################
+# Dnaapler (Reorient circular sequences)
+conda create -n dnaapler -c bioconda dnaapler -y
+
+# ############################################################
+# # Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
+# conda create -n fastplong -c bioconda fastplong -y
+
+# ############################################################
+# # Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
+# git clone https://github.com/rrwick/Filtlong.git
+# cd Filtlong
+# make -j
+# bin/filtlong -h
+# sudo cp bin/filtlong /usr/local/bin
+
+############################################################
+# Flye (De novo genome assembly from long sequencing reads)
+conda create -n flye -c bioconda flye -y
+
+############################################################
+## Medaka (Polishing assemblies from Oxford Nanopore sequencing)
+conda create -n medaka -c conda-forge -c nanoporetech -c bioconda medaka -y
+
+# ############################################################
+# # metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
+# conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
+
+# ############################################################
+# # myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# conda create -n myloasm -c bioconda myloasm -y
+
+############################################################
+# NanoPlot (Evaluate long reads quality)
+conda create -n nanoplot -c bioconda 'python-kaleido>=1.0.0' nanoplot -y
+conda activate nanoplot
+plotly_get_chrome -y
+#sudo find ${CONDA_PREFIX} -type d -name "browser_exe" -print0 | xargs -0 sudo chmod -R a+rwx
+conda deactivate
+
+# ############################################################
+# # NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# conda create -n nextdenovo -c bioconda nextdenovo -y
+
+# ############################################################
+# # Raven (De novo assembly from long reads)
+# conda create -n raven -c bioconda raven-assembler -y
+
+
+##########################################################################
+## B.5) Software installation - Genome assembly quality assessment
+##########################################################################
 
 ##########################################################################
 # Barrnap (Evaluate the completeness of rRNA genes)
@@ -215,47 +357,6 @@ conda deactivate
 conda activate checkm2
 echo $CHECKM2DB
 conda deactivate
-
-###########################################################
-# Chopper (Trim long reads)
-conda create -n chopper -c bioconda chopper -y
-
-###########################################################
-# Dnaapler (Reorient circular sequences)
-conda create -n dnaapler -c bioconda dnaapler -y
-
-##########################################################################
-# FastQC (Evaluate short reads quality)
-conda create -n fastqc -c bioconda fastqc -y
-
-##########################################################################
-# Fastp (Trim short reads)
-conda create -n fastp -c bioconda fastp -y
-
-# ############################################################
-# # Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
-# conda create -n fastplong -c bioconda fastplong -y
-
-# ############################################################
-# # Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
-# git clone https://github.com/rrwick/Filtlong.git
-# cd Filtlong
-# make -j
-# bin/filtlong -h
-# sudo cp bin/filtlong /usr/local/bin
-
-############################################################
-# Flye (De novo genome assembly from long sequencing reads)
-conda create -n flye -c bioconda flye -y
-
-############################################################
-# GenomeScope (Estimation of genome size)
-conda create -n genomescope -c bioconda genomescope2 -y
-
-##########################################################################
-# Git (Clone software directories from github.com)
-sudo apt-get update -y
-sudo apt-get install git -y
 
 ##########################################################################
 # GTDB-Tk (Taxonomyc assignment)
@@ -288,101 +389,12 @@ echo $GUNC_DB
 conda deactivate
 
 ##########################################################################
-# Gzip (Compress and decompress directories and files)
-sudo apt-get install gzip -y
-
-############################################################
-## KMC (K-mer counting of sequencing reads)
-conda create -n kmc -c bioconda kmc -y
-
-############################################################
-## Medaka (Polishing assemblies from Oxford Nanopore sequencing)
-conda create -n medaka -c conda-forge -c nanoporetech -c bioconda medaka -y
-
-# ############################################################
-# # metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
-# conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
-
-##########################################################################
-# MOB-suite (Plasmid identification)
-conda create -n mob_suite -c bioconda mob_suite -y
-
-##########################################################################
-# MultiQC (Unify read quality report)
-conda create -n multiqc -c bioconda multiqc -y
-
-# ############################################################
-# # myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
-# conda create -n myloasm -c bioconda myloasm -y
-
-############################################################
-# NanoPlot (Evaluate long reads quality)
-conda create -n nanoplot -c bioconda 'python-kaleido>=1.0.0' nanoplot -y
-conda activate nanoplot
-plotly_get_chrome -y
-#sudo find ${CONDA_PREFIX} -type d -name "browser_exe" -print0 | xargs -0 sudo chmod -R a+rwx
-conda deactivate
-
-# ############################################################
-# # NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
-# conda create -n nextdenovo -c bioconda nextdenovo -y
-
-##########################################################################
-# Openssh (Access computer remotely)
-sudo apt install openssh-server openssh-client
-sudo ufw allow ssh
-sudo ufw enable
-sudo ufw status
-sudo echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
-sudo systemctl restart ssh.service
-
-##########################################################################
 # QUAST (Evaluate assembly fragmentation)
 conda create -n quast -c bioconda quast -y
 
-############################################################
-# Rasusa (Reads downsampling)
-conda create -n rasusa -c bioconda rasusa -y
-
-# ############################################################
-# # Raven (De novo assembly from long reads)
-# conda create -n raven -c bioconda raven-assembler -y
 
 ##########################################################################
-# Rename (Rename files using regular expressions)
-sudo apt-get install rename -y
-
-##########################################################################
-# SRA Tools (Download reads from NCBI SRA)
-conda create -n sra-tools -c bioconda sra-tools -y
-
-##########################################################################
-# seqkit (Filter sequences by size)
-conda create -n seqkit -c bioconda seqkit -y
-
-##########################################################################
-# Screen (Software to use multiple screens in a terminal)
-sudo apt-get install screen -y
-
-# ##########################################################################
-# # Shovill (De novo assembly from short reads)
-# conda create -n spades -c bioconda shovill -y
-
-##########################################################################
-# SPAdes (De novo genome assembly from short reads or short and long reads)
-conda create -n spades -c bioconda spades -y
-
-##########################################################################
-# Unicycler (De novo genome assembly from short reads or short and long sequencing reads)
-conda create -n unicycler -c bioconda unicycler -y
-
-##########################################################################
-# Zip (Compress and decompress directories and files)
-sudo apt-get install zip -y
-
-
-##########################################################################
-## B.3) Software installation - Genome annotation
+## B.6) Software installation - Genome annotation
 ##########################################################################
 
 ##########################################################################

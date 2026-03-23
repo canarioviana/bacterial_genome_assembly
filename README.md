@@ -111,7 +111,6 @@ It also includes detailed instructions for the installation of all necessary sof
    * EggNOG-mapper
    * COG classifier
    * dbCAN
-   * 
 
 
 

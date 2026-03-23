@@ -15,56 +15,129 @@
 ############################################################
 ## This script is the continuation of the script "bacterial_genome_assembly.sh"
 
-
 ############################################################
 ## 11) Genome annotation
 ############################################################
 
 #############################################################
-## Genome annotation with Prokka
+## Genome annotation with Bakta
 
 # The assembly files should be in the directory 10_assemblies_for_analysis with the sufix .fsa and no special characters in their names.
 
 # Activate Conda environment
-conda activate prokka
+conda activate bakta
 # Loop through a list of files
 for file in 10_assemblies_for_analysis/*.fsa; do
     #Extract file name
     filename=${file##*/}
     #Extract sample name
     prefix=${filename%%.*}
-    prokka \
-    --cpus $(nproc --ignore=1) \
-    --addgenes \
-    --centre "" \
-    --outdir 11_genome_annotation/${prefix} \
+    bakta \
+    --threads $(nproc --ignore=1) \
+    --compliant \
+    --translation-table 11 \
+    --skip-plot \
+    --output 11_genome_annotation/${prefix} \
     --prefix ${prefix} \
     $file
 done
 # Deactivate Conda environment
 conda deactivate
 
-# Generate annotation summary files
-echo -e "Sample\tGene\tCDS\trRNA\ttRNA\ttmRNA" > 11_genome_annotation.tsv
+# Generating the annotation summary file
+# Define output file
+OUTPUT="11_genome_annotation.tsv"
+# Create header based on the order of the Bakta summary file
+HEADER="Sample\tLength\tCount\tGC\tN50\tN90\tN_ratio\tCoding_Density\ttRNAs\ttmRNAs\trRNAs\tncRNAs\tncRNA_regions\tCRISPR_arrays\tCDSs\tPseudogenes\tHypotheticals\tsORFs\tGaps\toriCs\toriVs\toriTs\tSoftware\tDatabase"
+echo -e "$HEADER" > "$OUTPUT"
+# Find all .txt files and process them
 find 11_genome_annotation -type f -name "*.txt" | while read -r file; do
-    # Extract file name
-    filename=${file##*/}
-    # Extract sample name
-    sample=${filename%%.*}
-    # Convert lines to tab separated table lines
-    cds=$(grep -i "^CDS:" "$file" | cut -d':' -f2 | tr -d ' ')
-    gene=$(grep -i "^gene:" "$file" | cut -d':' -f2 | tr -d ' ')
-    rrna=$(grep -i "^rRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
-    trna=$(grep -i "^tRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
-    tmrna=$(grep -i "^tmRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
-    # Add line to the output file
-    echo -e "${sample}\t${gene}\t${cds}\t${rrna}\t${trna}\t${tmrna}" >> 11_genome_annotation.tsv
+    # Extract sample name from the parent directory
+    sample=$(basename $(dirname "$file"))
+    # Process the file with a single awk command to extract all values
+    data=$(awk -F': ' '
+        /Length:/ {len=$2}
+        /Count:/ {cnt=$2}
+        /GC:/ {gc=$2}
+        /N50:/ {n50=$2}
+        /N90:/ {n90=$2}
+        /N ratio:/ {nr=$2}
+        /coding density:/ {cd=$2}
+        /tRNAs:/ {trna=$2}
+        /tmRNAs:/ {tmrna=$2}
+        /rRNAs:/ {rrna=$2}
+        /ncRNAs:/ {ncrna=$2}
+        /ncRNA regions:/ {ncreg=$2}
+        /CRISPR arrays:/ {crisp=$2}
+        /CDSs:/ {cds=$2}
+        /pseudogenes:/ {psudo=$2}
+        /hypotheticals:/ {hypo=$2}
+        /sORFs:/ {sorf=$2}
+        /gaps:/ {gaps=$2}
+        /oriCs:/ {oric=$2}
+        /oriVs:/ {oriv=$2}
+        /oriTs:/ {orit=$2}
+        /Software:/ {soft=$2}
+        /Database:/ {db=$2}
+        END {
+            printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", 
+            len, cnt, gc, n50, n90, nr, cd, trna, tmrna, rrna, ncrna, ncreg, crisp, cds, psudo, hypo, sorf, gaps, oric, oriv, orit, soft, db
+        }
+    ' "$file")
+    # Append to the TSV file
+    echo -e "${sample}\t${data}" >> "$OUTPUT"
 done
 
 # Compress the output directory
 zip -r 11_genome_annotation.zip 11_genome_annotation
 # Delete the output directory
 # rm -r 11_genome_annotation
+
+# #############################################################
+# ## Alternative method: Genome annotation with Prokka
+
+# # The assembly files should be in the directory 10_assemblies_for_analysis with the sufix .fsa and no special characters in their names.
+
+# # Activate Conda environment
+# conda activate prokka
+# # Loop through a list of files
+# for file in 10_assemblies_for_analysis/*.fsa; do
+#     #Extract file name
+#     filename=${file##*/}
+#     #Extract sample name
+#     prefix=${filename%%.*}
+#     prokka \
+#     --cpus $(nproc --ignore=1) \
+#     --addgenes \
+#     --centre "" \
+#     --outdir 11_genome_annotation/${prefix} \
+#     --prefix ${prefix} \
+#     $file
+# done
+# # Deactivate Conda environment
+# conda deactivate
+
+# # Generate annotation summary files
+# echo -e "Sample\tGene\tCDS\trRNA\ttRNA\ttmRNA" > 11_genome_annotation.tsv
+# find 11_genome_annotation -type f -name "*.txt" | while read -r file; do
+#     # Extract file name
+#     filename=${file##*/}
+#     # Extract sample name
+#     sample=${filename%%.*}
+#     # Convert lines to tab separated table lines
+#     cds=$(grep -i "^CDS:" "$file" | cut -d':' -f2 | tr -d ' ')
+#     gene=$(grep -i "^gene:" "$file" | cut -d':' -f2 | tr -d ' ')
+#     rrna=$(grep -i "^rRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
+#     trna=$(grep -i "^tRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
+#     tmrna=$(grep -i "^tmRNA:" "$file" | cut -d':' -f2 | tr -d ' ')
+#     # Add line to the output file
+#     echo -e "${sample}\t${gene}\t${cds}\t${rrna}\t${trna}\t${tmrna}" >> 11_genome_annotation.tsv
+# done
+
+# # Compress the output directory
+# zip -r 11_genome_annotation.zip 11_genome_annotation
+# # Delete the output directory
+# # rm -r 11_genome_annotation
 
 #############################################################
 ## Alternative method: Genome annotation with NCBI PGAP as part of the genome submission process to GenBank

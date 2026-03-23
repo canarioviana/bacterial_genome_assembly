@@ -1,4 +1,4 @@
-# Bash Scripts for Bacterial Genome Assembly
+# Bash Scripts for Bacterial Genome Assembly (and Annotation)
 
 This repository contains a collection of command-lines and **Bash scripts** essential for bacterial genome **assembly from short paired-end reads (Illumina) or single-end long-reads (PacBio/ONT)** and **genome annotation**.
 
@@ -91,9 +91,27 @@ It also includes detailed instructions for the installation of all necessary sof
     * MOB-suite 
 10) Assignment of contigs to molecules
     * MOB-suite and an in-house script
+---
 
+## The Genome Annotation Workflow
 
-
+1) Genome annotation
+    * Bakta
+2) Virulence and resistance genes
+    * AMRFinderPlus
+    * PanViTa
+    * Resistance Gene Identifier
+3) Mobile Genetic Elements
+   * CRISPRcasFinder (CRISRCas systems. Local or online)
+   * PHASTEST (Virus. Online)
+   * VIBRANT (Virus)
+4) Molecular typing
+   * FastMLST
+5) Functional annotation
+   * EggNOG-mapper
+   * COG classifier
+   * dbCAN
+   * 
 
 
 

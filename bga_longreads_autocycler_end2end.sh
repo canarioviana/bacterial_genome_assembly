@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 21/03/2026
+# Date: 24/03/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #

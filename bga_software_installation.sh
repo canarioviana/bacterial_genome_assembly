@@ -274,7 +274,7 @@ conda create -n any2fasta -c bioconda any2fasta -y
 wget https://github.com/rrwick/Autocycler/raw/refs/heads/main/pipelines/Conda_environment_file_by_Ryan_Wick/environment.yml
 conda env create --file environment.yml --name autocycler -y
 conda activate autocycler
-conda install -c bioconda "dnaapler>=1.2.0" -y # Require for using gfa files as input
+# conda install -c bioconda "dnaapler>=1.2.0" -y # Require for using gfa files as input. It will be run in its own environment
 plassembler download -d "$CONDA_PREFIX"/plassembler_db
 conda deactivate
 

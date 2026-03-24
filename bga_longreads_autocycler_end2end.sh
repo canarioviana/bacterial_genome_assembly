@@ -393,7 +393,9 @@ for reads in 3_chopper/*.fq.gz; do
     autocycler combine -a 3_autocycler -i 3_autocycler/clustering/qc_pass/cluster_*/5_final.gfa
    
     # Reorient circular sequences with Dnaapler
+    # conda activate dnaapler # Uncomment if dnaapler does not work in the autocycler Conda environment
     dnaapler all -i 3_autocycler/consensus_assembly.gfa -o 4_dnaapler -t $(nproc --ignore=1)
+    # conda activate autocycler # Uncomment if dnaapler does not work in the autocycler Conda environment
     autocycler gfa2fasta -i 4_dnaapler/dnaapler_reoriented.gfa -o 4_dnaapler/dnaapler_reoriented.fasta
 
     # Back to main directory

@@ -617,6 +617,8 @@ for dir in 5_flye/*/; do
 done
 
 # Reorient circular molecules
+# Activate Conda environment
+conda activate dnaapler
 # Loop through a list of files
 for reads in 3_chopper/*.fq.gz; do
     # Extract reads file name
@@ -625,18 +627,8 @@ for reads in 3_chopper/*.fq.gz; do
     sample=${readsfilename%%_*} # In case the file name is samplename_*.fq.gz
     sample=${sample%%.*} # In case the file name is samplename.fq.gz
 
-    # Activate Conda environment
-    conda activate dnaapler
     # Run dnaapler
-    dnaapler all -i 5_flye/"$sample"_flye/assembly_graph.gfa -o 5_flye_dnaapler/"$sample"_dnaapler/ -t $(nproc --ignore=1)
-    # Deactivate Conda environment
-    conda deactivate
-    
-    # Convert gfa to fasta
-    # Activate Conda environment
-    conda activate any2fasta
-    # Run dnaapler
-    any2fasta 5_flye_dnaapler/"$sample"_dnaapler/dnaapler_reoriented.gfa > 5_flye_dnaapler/"$sample"_dnaapler/dnaapler_reoriented.fasta
+    dnaapler all -i 5_flye/"$sample"_flye/assembly.fasta -o 5_flye_dnaapler/"$sample"_dnaapler/ -t $(nproc --ignore=1)
     # Deactivate Conda environment
     conda deactivate
 done

@@ -629,10 +629,10 @@ for reads in 3_chopper/*.fq.gz; do
 
     # Run dnaapler
     dnaapler all -i 5_flye/"$sample"_flye/assembly.fasta -o 5_flye_dnaapler/"$sample"_dnaapler/ -t $(nproc --ignore=1)
-    # Deactivate Conda environment
-    conda deactivate
 done
-
+# Deactivate Conda environment
+conda deactivate
+    
 # Compress output files
 zip -r 5_flye.zip 5_flye
 

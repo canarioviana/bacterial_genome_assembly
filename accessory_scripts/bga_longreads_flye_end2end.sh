@@ -617,6 +617,8 @@ for dir in 5_flye/*/; do
 done
 
 # Reorient circular molecules
+# Create an output directory
+mkdir 5_flye_dnaapler
 # Activate Conda environment
 conda activate dnaapler
 # Loop through a list of files

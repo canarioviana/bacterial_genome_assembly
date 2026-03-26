@@ -39,7 +39,12 @@ for file in 10_assemblies_for_analysis/*.fsa; do
     --skip-plot \
     --output 11_genome_annotation/${prefix} \
     --prefix ${prefix} \
-    $file
+    "$file"
+
+    # Isolate hypothetical protein files
+    mkdir -p "11_genome_annotation/${prefix}/hypotheticals"
+    mv 11_genome_annotation/${prefix}/*hypotheticals* "11_genome_annotation/${prefix}/hypotheticals/" 2>/dev/null
+    
 done
 # Deactivate Conda environment
 conda deactivate

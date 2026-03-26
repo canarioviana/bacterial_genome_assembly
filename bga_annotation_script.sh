@@ -185,6 +185,7 @@ mkdir -p 12_amrfinder
 
 # Declare annotation format
 annotation_format=bakta
+
 # Activate Conda environment
 conda activate amrfinder
 # Loop through a list of sample files

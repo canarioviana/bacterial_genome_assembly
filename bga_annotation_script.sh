@@ -47,6 +47,9 @@ for file in 10_assemblies_for_analysis/*.fsa; do
 
     # Change extension .gff3 to .gff
     mv 11_genome_annotation/${prefix}/${prefix}.gff3 11_genome_annotation/${prefix}/${prefix}.gff
+
+    # Change extension .gbff to .gbk
+    mv 11_genome_annotation/${prefix}/${prefix}.gbff 11_genome_annotation/${prefix}/${prefix}.gbk
 done
 # Deactivate Conda environment
 conda deactivate

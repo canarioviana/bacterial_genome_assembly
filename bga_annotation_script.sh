@@ -203,7 +203,7 @@ for file in 11_genome_annotation/*/*.faa; do
     --database /db/amrfinder/latest \
     --plus \
     --annotation_format $annotation_format \
-    --nucleotide "11_genome_annotation/${sample}/${sample}.fsa" \
+    --nucleotide "11_genome_annotation/${sample}/${sample}.fna" \
     --protein "11_genome_annotation/${sample}/${sample}.faa"  \
     --gff "11_genome_annotation/${sample}/${sample}.gff" \
     --name "${sample}" \
@@ -306,7 +306,7 @@ conda activate crisprcasfinder
 # Install dependencies
 macsydata install -u CASFinder==3.1.0 # You only have to run this command the first time you use this software
 # Loop through a list of files
-for file in ../11_genome_annotation/*/*.fsa; do
+for file in ../11_genome_annotation/*/*.fna; do
     prefix=$(basename ${file} .fasta)
     # Run CRISPR-CasFinder
     perl CRISPRCasFinder.pl -cas -html -in $file -out "${prefix}"
@@ -370,7 +370,7 @@ mkdir -p 12_vibrant
 # Activate Conda environment
 conda activate vibrant
 # Loop through a list of sample files
-for file in 11_genome_annotation/*/*.fsa; do
+for file in 11_genome_annotation/*/*.fna; do
     # Extract file name
     filename=${file##*/}
     # Extract sample name
@@ -419,7 +419,7 @@ fastmlst \
 -to 12_fastmlst/fastmlst.tsv \
 -fo 12_fastmlst/mlst_concat_alleles.fasta \
 --splited-output 12_fastmlst/mlst_alleles \
-11_genome_annotation/*/*.fsa
+11_genome_annotation/*/*.fna
 # Deactivate Conda environment
 conda deactivate
 

@@ -44,7 +44,9 @@ for file in 10_assemblies_for_analysis/*.fsa; do
     # Isolate hypothetical protein files
     mkdir -p "11_genome_annotation/${prefix}/hypotheticals"
     mv 11_genome_annotation/${prefix}/*hypotheticals* "11_genome_annotation/${prefix}/hypotheticals/" 2>/dev/null
-    
+
+    # Change extension .gff3 to .gff
+    mv 11_genome_annotation/${prefix}/${prefix}.gff3 to 11_genome_annotation/${prefix}/${prefix}.gff
 done
 # Deactivate Conda environment
 conda deactivate

@@ -32,6 +32,8 @@ for file in 10_assemblies_for_analysis/*.fsa; do
     filename=${file##*/}
     #Extract sample name
     prefix=${filename%%.*}
+
+    # Run Bakta
     bakta \
     --threads $(nproc --ignore=1) \
     --compliant \

@@ -181,6 +181,8 @@ cd ..
 # Create an output directory
 mkdir -p 12_amrfinder
 
+# Declare annotation format
+annotation_format=bakta
 # Activate Conda environment
 conda activate amrfinder
 # Loop through a list of sample files
@@ -200,7 +202,7 @@ for file in 11_genome_annotation/*/*.faa; do
     --threads $(nproc --ignore=1) \
     --database /db/amrfinder/latest \
     --plus \
-    --annotation_format bakta \
+    --annotation_format $annotation_format \
     --nucleotide "11_genome_annotation/${sample}/${sample}.fsa" \
     --protein "11_genome_annotation/${sample}/${sample}.faa"  \
     --gff "11_genome_annotation/${sample}/${sample}.gff" \

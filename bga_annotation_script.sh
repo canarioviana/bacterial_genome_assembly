@@ -466,7 +466,8 @@ for file in 11_genome_annotation/*/*.faa; do
     prefix=$(basename ${file} .faa)
     # Run EggNOG-mapper
     emapper.py --cpu $(nproc --ignore=1) -i $file --output "${prefix}" --output_dir 12_eggnog_mapper
-    tail +5 12_eggnog_mapper/"${prefix}".emapper.annotations > 12_eggnog_mapper/"${prefix}".emapper.annotations.tsv
+    # Create an annotation table without comments
+    grep -v '^##' 12_eggnog_mapper/"${prefix}".emapper.annotations > 12_eggnog_mapper/"${prefix}".emapper.annotations.tsv
 done
 # Deactivate Conda environment
 conda deactivate

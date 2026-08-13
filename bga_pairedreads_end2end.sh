@@ -799,7 +799,6 @@ conda activate gtdbtk
 gtdbtk classify_wf \
 --cpus $(nproc --ignore=1) \
 --extension .fasta \
---mash_db /db/gtdbtk \
 --genome_dir 6_assemblies \
 --out_dir 8_gtdbtk
 # Copy and rename output files

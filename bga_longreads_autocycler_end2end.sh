@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from long-read sequencing data
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 24/03/2026
+# Date: 13/08/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -696,8 +696,6 @@ conda activate gtdbtk
 # Run the program
 gtdbtk classify_wf \
 --cpus $(nproc --ignore=1) \
---extension .fasta \
---mash_db /db/gtdbtk \
 --genome_dir 6_assemblies \
 --out_dir 8_gtdbtk
 # Copy and rename output files

@@ -363,10 +363,9 @@ conda deactivate
 mkdir -p /db/gtdbtk/
 cd /db/
 wget -c --progress=bar https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
-# wget -c --progress=bar https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
-# echo '24b476ea5a4ef30519d461e56cc4a27f gtdbtk_data.tar.gz' | md5sum -c #md5sum for version r226
+# wget -c --progress=bar https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz # Another server
 tar -xvzf gtdbtk_data.tar.gz -C "/db/gtdbtk" --strip 1 > /dev/null
-conda create -n gtdbtk -c bioconda gtdbtk=2.4.1 -y
+conda create -n gtdbtk -c bioconda gtdbtk=2.7.2 -y
 conda activate gtdbtk
 conda env config vars set GTDBTK_DATA_PATH="/db/gtdbtk"
 conda deactivate

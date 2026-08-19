@@ -66,10 +66,6 @@ sudo apt-get install gzip -y
 conda create -n sra-tools -c bioconda sra-tools -y
 
 ##########################################################################
-# seqkit (Filter sequences by size)
-conda create -n seqkit -c bioconda seqkit -y
-
-##########################################################################
 # Screen (Software to use multiple screens in a terminal)
 sudo apt-get install screen -y
 
@@ -251,6 +247,10 @@ conda create -n multiqc -c bioconda multiqc -y
 ############################################################
 # Rasusa (Reads downsampling)
 conda create -n rasusa -c bioconda rasusa -y
+
+##########################################################################
+# seqkit (Filter sequences by size)
+conda create -n seqkit -c bioconda seqkit -y
 
 # ##########################################################################
 # # Shovill (De novo assembly from short reads)

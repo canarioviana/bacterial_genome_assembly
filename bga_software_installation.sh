@@ -222,42 +222,52 @@ sudo chmod -R o+rx /db
 
 ##########################################################################
 # FastQC (Evaluate short reads quality)
+# https://github.com/s-andrews/FastQC
 conda create -n fastqc -c bioconda fastqc -y
 
 ##########################################################################
 # Fastp (Trim short reads)
+# https://github.com/OpenGene/fastp
 conda create -n fastp -c bioconda fastp -y
 
 ############################################################
 # GenomeScope (Estimation of genome size)
+# https://github.com/schatzlab/genomescope
 conda create -n genomescope -c bioconda genomescope2 -y
 
 ############################################################
-## KMC (K-mer counting of sequencing reads)
+# KMC (K-mer counting of sequencing reads)
+# https://github.com/refresh-bio/KMC
 conda create -n kmc -c bioconda kmc -y
 
 ##########################################################################
 # MOB-suite (Plasmid identification)
+# https://github.com/phac-nml/mob-suite
 conda create -n mob_suite -c bioconda mob_suite -y
 
 ##########################################################################
 # MultiQC (Unify read quality report)
+# https://github.com/multiqc/multiqc
 conda create -n multiqc -c bioconda multiqc -y
 
 ############################################################
 # Rasusa (Reads downsampling)
+# https://github.com/mbhall88/rasusa
 conda create -n rasusa -c bioconda rasusa -y
 
 ##########################################################################
 # seqkit (Filter sequences by size)
+# https://github.com/shenwei356/seqkit
 conda create -n seqkit -c bioconda seqkit -y
 
 # ##########################################################################
 # # Shovill (De novo assembly from short reads)
+# https://github.com/tseemann/shovill
 # conda create -n spades -c bioconda shovill -y
 
 ##########################################################################
 # Unicycler (De novo genome assembly from short reads or short and long sequencing reads)
+# https://github.com/rrwick/unicycler
 conda create -n unicycler -c bioconda unicycler -y
 
 
@@ -267,10 +277,12 @@ conda create -n unicycler -c bioconda unicycler -y
 
 ##########################################################################
 # any2fasta (Extract fasta from gfa file)
+# https://github.com/tseemann/any2FASTA
 conda create -n any2fasta -c bioconda any2fasta -y
 
 ##########################################################################
 # Autocycler
+# https://github.com/rrwick/Autocycler
 wget https://github.com/rrwick/Autocycler/raw/refs/heads/main/pipelines/Conda_environment_file_by_Ryan_Wick/environment.yml
 conda env create --file environment.yml --name autocycler -y
 conda activate autocycler
@@ -280,18 +292,22 @@ conda deactivate
 
 ###########################################################
 # Chopper (Trim long reads)
+# https://github.com/wdecoster/chopper
 conda create -n chopper -c bioconda chopper -y
 
 ###########################################################
 # Dnaapler (Reorient circular sequences)
+# https://github.com/gbouras13/dnaapler
 conda create -n dnaapler -c bioconda dnaapler -y
 
 # ############################################################
 # # Fastplong (Trim long reads. Not used in the end-to-end pipeline.)
+# https://github.com/OpenGene/fastplong
 # conda create -n fastplong -c bioconda fastplong -y
 
 # ############################################################
 # # Filtlong (Trim long reads. Not used in the end-to-end pipeline.)
+# https://github.com/rrwick/filtlong
 # git clone https://github.com/rrwick/Filtlong.git
 # cd Filtlong
 # make -j
@@ -300,6 +316,7 @@ conda create -n dnaapler -c bioconda dnaapler -y
 
 ############################################################
 # Flye (De novo genome assembly from long sequencing reads)
+# https://github.com/mikolmogorov/Flye
 conda create -n flye -c bioconda flye -y
 
 ############################################################
@@ -308,14 +325,17 @@ conda create -n medaka -c conda-forge -c nanoporetech -c bioconda medaka -y
 
 # ############################################################
 # # metaMDBG (De novo assembly of metagenomes from long reads. Not used in the end-to-end pipeline.)
+# https://github.com/GaetanBenoitDev/metaMDBG
 # conda create -n metamdbg -c conda-forge -c bioconda metamdbg -y
 
 # ############################################################
 # # myloasm (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# https://github.com/bluenote-1577/myloasm
 # conda create -n myloasm -c bioconda myloasm -y
 
 ############################################################
 # NanoPlot (Evaluate long reads quality)
+# https://github.com/wdecoster/NanoPlot
 conda create -n nanoplot -c bioconda 'python-kaleido>=1.0.0' nanoplot -y
 conda activate nanoplot
 plotly_get_chrome -y
@@ -324,10 +344,12 @@ conda deactivate
 
 # ############################################################
 # # NextDenovo (De novo assembly from long reads. Not used in the end-to-end pipeline.)
+# https://github.com/Nextomics/NextDenovo
 # conda create -n nextdenovo -c bioconda nextdenovo -y
 
 # ############################################################
 # # Raven (De novo assembly from long reads)
+# https://github.com/lbcb-sci/raven
 # conda create -n raven -c bioconda raven-assembler -y
 
 
@@ -337,10 +359,12 @@ conda deactivate
 
 ##########################################################################
 # Barrnap (Evaluate the completeness of rRNA genes)
+# https://github.com/tseemann/barrnap
 conda create -n barrnap -c bioconda barrnap -y
 
 ##########################################################################
 # CheckM2 (Evaluate the assembly completeness and contamination)
+# https://github.com/chklovski/CheckM2
 mkdir /db/checkm2
 cd
 git clone --recursive https://github.com/chklovski/checkm2.git
@@ -358,16 +382,18 @@ conda activate checkm2
 echo $CHECKM2DB
 conda deactivate
 
-##########################################################################
-# GTDB-Tk (Taxonomyc assignment)
-mkdir -p /db/gtdbtk/
-cd /db/
-wget -c --progress=bar https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
-# wget -c --progress=bar https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz # Another server
-tar -xvzf gtdbtk_data.tar.gz -C "/db/gtdbtk" --strip 1 > /dev/null
+############################################################
+# GTDB-Tk (tested version: 2.7.2, database r232)
+# https://github.com/Ecogenomics/GTDBTk
+mkdir -p /db/gtdbtk/latest
+cd /db
+wget https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
+#In case it fails you can continue the download with the command below
+#wget -c --progress=bar https://data.gtdb.ecogenomic.org/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
+tar -xvzf gtdbtk_data.tar.gz -C "/db/gtdbtk/latest" --strip 1 > /dev/null
 conda create -n gtdbtk -c conda-forge -c bioconda gtdbtk=2.7.2 -y
 conda activate gtdbtk
-conda env config vars set GTDBTK_DATA_PATH="/db/gtdbtk"
+conda env config vars set GTDBTK_DATA_PATH="/db/gtdbtk/latest"
 conda deactivate
 conda activate gtdbtk
 echo $GTDBTK_DATA_PATH
@@ -376,6 +402,7 @@ conda deactivate
 
 ##########################################################################
 # GUNC (Evaluate the assembly contamination)
+# https://github.com/grp-bork/gunc
 mkdir /db/gunc
 conda create -n gunc -c bioconda gunc -y
 conda activate gunc
@@ -389,6 +416,7 @@ conda deactivate
 
 ##########################################################################
 # QUAST (Evaluate assembly fragmentation)
+# https://github.com/ablab/quast
 conda create -n quast -c bioconda quast -y
 
 
@@ -398,6 +426,7 @@ conda create -n quast -c bioconda quast -y
 
 ##########################################################################
 # Bakta
+# https://github.com/oschwengers/bakta
 conda create -n bakta -c bioconda bakta -y
 mkdir -p /db/bakta/
 conda activate bakta
@@ -419,10 +448,12 @@ conda deactivate
 
 ##########################################################################
 # COG classifier (Gene functional annotation)
+# https://github.com/moshi4/COGclassifier
 conda create -n cogclassifier -c bioconda -c conda-forge cogclassifier -y
 
 ##########################################################################
 # CRISPRcasFinder local (CRISPR/Cas system prediction)
+# https://github.com/dcouvin/CRISPRCasFinder
 cd /db
 git clone https://github.com/dcouvin/CRISPRCasFinder.git
 cd CRISPRCasFinder
@@ -444,6 +475,7 @@ run_dbcan database --db_dir /db/dbcan
 
 ##########################################################################
 # EggNOG-mapper (Gene functional annotation)
+# https://github.com/eggnogdb/eggnog-mapper
 conda create -n eggnog-mapper -c bioconda eggnog-mapper -y
 conda activate eggnog-mapper
 conda env config vars set EGGNOG_DATA_DIR="/db/eggnog/"
@@ -462,6 +494,7 @@ conda deactivate
 
 ##########################################################################
 # PanViTa (Virulence and antimicrobial resistance prediction)
+# https://github.com/dlnrodrigues/panvita
 conda create -n panvita -y
 conda activate panvita
 conda install -c anaconda wget basemap -y
@@ -478,10 +511,17 @@ conda deactivate
 
 ##########################################################################
 # Prokka (Genome annotation)
+# https://github.com/tseemann/prokka
 conda create -n prokka -c bioconda prokka -y
 
 ##########################################################################
+# Pyarrnap (Evaluate the completeness of rRNA genes)
+# https://github.com/moshi4/pybarrnap
+conda create -n pybarrnap -c conda-forge -c bioconda pybarrnap -y
+
+##########################################################################
 # RGI (Antimicrobial resistance prediction)
+# https://github.com/arpcard/rgi
 conda create -n rgi -c conda-forge -c bioconda -c defaults rgi -y
 
 ############################################################

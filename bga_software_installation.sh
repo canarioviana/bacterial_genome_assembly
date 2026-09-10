@@ -476,13 +476,25 @@ run_dbcan database --db_dir /db/dbcan
 ##########################################################################
 # EggNOG-mapper (Gene functional annotation)
 # https://github.com/eggnogdb/eggnog-mapper
+mkdir /db/eggnog
+cd /db/eggnog
+wget -O eggnog.taxa.tar.gz \
+https://downloads.eggnogdb.org/emapper/emapperdb-5.0.2/eggnog.taxa.tar.gz
+tar -xzf eggnog.taxa.tar.gz
+rm eggnog.taxa.tar.gz
+wget -O eggnog.db.gz \
+https://downloads.eggnogdb.org/emapper/emapperdb-5.0.2/eggnog.db.gz
+gunzip eggnog.db.gz
+wget -O eggnog_proteins.dmnd.gz \
+https://downloads.eggnogdb.org/emapper/emapperdb-5.0.2/eggnog_proteins.dmnd.gz
+gunzip eggnog_proteins.dmnd.gz
+cd -
 conda create -n eggnog-mapper -c bioconda eggnog-mapper -y
 conda activate eggnog-mapper
 conda env config vars set EGGNOG_DATA_DIR="/db/eggnog/"
 conda deactivate
 conda activate eggnog-mapper
 echo $EGGNOG_DATA_DIR
-download_eggnog_data.py --data_dir /db/eggnog
 conda deactivate
 
 ##########################################################################

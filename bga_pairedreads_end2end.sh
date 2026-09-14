@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 13/09/2026
+# Date: 14/09/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -134,7 +134,7 @@ if [ -f "0_reads_accessions.tsv" ]; then
     # Remove Windows CRLF line endings
     sed -i 's/\r$//' 0_reads_accessions.tsv
 else
-    echo "⚠️  Metadata file for reads from NCBI SRA '0_reads_accessions.tsv' not found. Local files will be verified later." | tee -a 0_workflow_progress.txt
+    echo "⚠️ Warning: The file 0_reads_accessions.tsv was not found. No attempt will be made to download sequencing reads in the next step." | tee -a 0_workflow_progress.txt
 fi
 
 # Update the file 0_workflow_progress.txt

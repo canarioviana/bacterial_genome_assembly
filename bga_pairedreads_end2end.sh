@@ -765,12 +765,14 @@ for r1 in "${r1_files[@]}"; do
         [ -f 3_genomesize.tsv ] && sed -i "/^${sample}\t/d" 3_genomesize.tsv
         echo -e "${sample}\t${genomesize_bp}" >> 3_genomesize.tsv
     else
-        # 
-        echo "✗  ERROR: Invalid genome size estimate (${genomesize_bp}) for sample ${sample}. Aborting." | tee -a 0_workflow_progress.txt
+        # Unreliable GenomeScope model fit : skip this sample and keep genomescope directory for manual review.
+        echo "✗  WARNING: Invalid genome size estimate (${genomesize_bp}) for sample ${sample}. Skipping sample (kept for manual review in ${genomesizedir}/genomescope)." | tee -a 0_workflow_progress.txt
         [ -f 3_genomesize.tsv ] && sed -i "/^${sample}\t/d" 3_genomesize.tsv
         echo -e "${sample}\tNA" >> 3_genomesize.tsv
         rm -r kmc_tmp kmc_count* kmc_histogram.tsv kmc_input_reads.txt
-        exit 1
+        # Increase sample count
+        i=$((i + 1))
+        continue
     fi
 
     # Move kmc temporary files to the genome size directory

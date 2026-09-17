@@ -44,9 +44,7 @@ It also includes detailed instructions for the installation of all necessary sof
     * FastQC
     * MultiQC
 5) De novo assembly
-    * Unicycler (end-to-end workflow)
-    * Shovill
-    * SPAdes
+    * Unicycler
 6) Organizing de novo assembly files
 7) Assembly quality assessment
     * CheckM2

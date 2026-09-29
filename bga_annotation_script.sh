@@ -332,8 +332,6 @@ for directory in */; do
     cat "$sample"/TSV/CRISPR-Cas_summary.tsv >> CRISPR-Cas_summary_all.tsv
     echo -e "\n" >> CRISPR-Cas_summary_all.tsv
 done
-# Deactivate Conda environment
-conda deactivate
 
 # Edit the summary file header
 sed -i 's/Evidence-levels/Nb_arrays_evidence-level_1\tNb_arrays_evidence-level_2\tNb_arrays_evidence-level_3\tNb_arrays_evidence-level_4/g' CRISPR-Cas_summary_all.tsv

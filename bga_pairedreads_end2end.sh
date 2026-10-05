@@ -1768,30 +1768,39 @@ else
         # Start counting the running time
         loop_start_time=$SECONDS
 
-        r1=(3_fastp_downsampling/${sample}_trimmed_ds_1.fq.gz)
-        r2=(3_fastp_downsampling/${sample}_trimmed_ds_2.fq.gz)
-        echo -e Assembly file: ${file}
-        echo -e R1 file: $r1
-        echo -e R2 file: $r2
+        r1="1_reads/${sample}_1.fq.gz"
+        r2="1_reads/${sample}_2.fq.gz"
+        echo "Assembly file: ${file}"
+        echo "R1 file: ${r1}"
+        echo "R2 file: ${r2}"
 
         # Check the input files
         if [ ! -s "$r1" ] || [ ! -s "$r2" ]; then
-            echo "✗  ERROR: The input files of sample ${sample} are empty. Aborting." | tee -a 0_workflow_progress.txt
+            echo "✗  ERROR: ${workflow_step}: read files of sample ${sample} are missing or empty. Aborting." | tee -a 0_workflow_progress.txt
+            rm -f 7_coverage.tsv
             exit 1
         fi
 
-        # Calculate coverage
-        bases_in_assembly=$(awk '/^>/ {next} {sum += length($0)} END {print sum}' "$file")
-        echo -e Bases in assembly: $bases_in_assembly
-        bases_in_reads=$(zcat "$r1" "$r2" | awk 'NR%4==2 {sum += length($0)} END {print sum}')
-        echo -e Bases in reads: $bases_in_reads
-        if [ "$bases_in_assembly" -gt 0 ]; then
-            coverage=$(echo "scale=2; $bases_in_reads / $bases_in_assembly" | bc)
-            echo -e Coverage: "${coverage}\n"
-            echo -e "${sample}\t${coverage}" >> 7_coverage.tsv
-        else
-            echo -e "${sample}\t0" >> 7_coverage.tsv
+        # Count bases in the assembly (%.0f avoids scientific notation in mawk)
+        bases_in_assembly=$(awk '/^>/ {next} {sum += length($0)} END {printf "%.0f\n", sum}' "$file")
+        echo "Bases in assembly: ${bases_in_assembly}"
+
+        # Count bases in the reads; pipefail makes any zcat error (CRC, truncation) fail the substitution
+        if ! bases_in_reads=$(set -o pipefail; zcat "$r1" "$r2" | awk 'NR%4==2 {sum += length($0)} END {printf "%.0f\n", sum}'); then
+            echo "✗  ERROR: ${workflow_step}: corrupted read file(s) for sample ${sample} (gzip failed). Aborting." | tee -a 0_workflow_progress.txt
+            rm -f 7_coverage.tsv
+            exit 1
         fi
+        echo "Bases in reads: ${bases_in_reads}"
+
+        # Calculate coverage
+        if [ "$bases_in_assembly" -gt 0 ]; then
+            coverage=$(awk -v r="$bases_in_reads" -v a="$bases_in_assembly" 'BEGIN {printf "%.2f", r/a}')
+        else
+            coverage=0
+        fi
+        echo -e "Coverage: ${coverage}\n"
+        echo -e "${sample}\t${coverage}" >> 7_coverage.tsv
 
         # Stop counting the running time
         loop_elapsed_time=$((SECONDS - $loop_start_time))
@@ -1811,7 +1820,7 @@ else
     echo "${workflow_step}: Checking file integrity" | tee -a 0_workflow_progress.txt
     output_file="7_coverage.tsv"
     md5sum "${output_file}" > "${output_file}".md5
-    if ! md5sum -c "${output_file}".md5 | tee -a 0_workflow_progress.txt; then
+    if ! (set -o pipefail; md5sum -c "${output_file}".md5 | tee -a 0_workflow_progress.txt); then
         echo "✗  ERROR: ${output_file}: integrity check failed" | tee -a 0_workflow_progress.txt
         exit 1
     fi
@@ -1826,6 +1835,7 @@ seconds=$((elapsed_time % 60))
 running_time=$(printf "%02d:%02d:%02d" "$hours" "$minutes" "$seconds")
 # Update the file 0_workflow_progress.txt
 echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') — Total: ${running_time} ■■■\n" | tee -a 0_workflow_progress.txt
+
 
 ############################################################
 ## 8) Taxonomic assignment

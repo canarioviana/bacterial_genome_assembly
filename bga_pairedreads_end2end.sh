@@ -1768,8 +1768,8 @@ else
         # Start counting the running time
         loop_start_time=$SECONDS
 
-        r1="1_reads/${sample}_1.fq.gz"
-        r2="1_reads/${sample}_2.fq.gz"
+        r1="3_fastp_downsampling/${sample}_trimmed_ds_1.fq.gz"
+        r2="3_fastp_downsampling/${sample}_trimmed_ds_2.fq.gz"
         echo "Assembly file: ${file}"
         echo "R1 file: ${r1}"
         echo "R2 file: ${r2}"

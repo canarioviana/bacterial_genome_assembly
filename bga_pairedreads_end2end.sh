@@ -806,7 +806,7 @@ for r1 in "${r1_files[@]}"; do
     # Delete the original trimmed reads after confirming rasusa actually produced valid output
     if [ -f "3_fastp_downsampling/${output_r1}" ] && [ -f "3_fastp_downsampling/${output_r2}" ] \
         && gzip -t "3_fastp_downsampling/${output_r1}" 2>/dev/null && gzip -t "3_fastp_downsampling/${output_r2}" 2>/dev/null; then
-        # rm "${r1}" "${r2}"
+        : # rm "${r1}" "${r2}"   (trimmed reads are kept)
     else
         echo "✗  ERROR: Rasusa did not produce valid output for sample ${sample}. Aborting without deleting original trimmed reads." | tee -a 0_workflow_progress.txt
         exit 1

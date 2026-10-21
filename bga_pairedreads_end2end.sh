@@ -750,8 +750,9 @@ for r1 in "${r1_files[@]}"; do
     if [[ ! -f "$summary_file" ]]; then
         echo "✗  ERROR: GenomeScope failed for sample ${sample} (no summary.txt). Aborting." | tee -a 0_workflow_progress.txt
         echo -e "${sample}\tNA" >> 3_genomesize.tsv
-        # Clean up temp files before exiting
-        mv kmc_count* kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
+        # Discard the KMC k-mer database and keep only the histogram
+        rm -f kmc_count.kmc_pre kmc_count.kmc_suf
+        mv kmc_histogram.tsv kmc_input_reads.txt ${genomesizedir}
         rm -r kmc_tmp
         exit 1
     fi

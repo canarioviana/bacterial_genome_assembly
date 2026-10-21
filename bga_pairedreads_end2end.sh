@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 05/10/2026
+# Date: 21/10/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -738,6 +738,7 @@ for r1 in "${r1_files[@]}"; do
     # Run software
     echo "Estimating genome size"
     genomescope2 \
+    -p 1 \
     -k 21 \
     -i kmc_histogram.tsv \
     -o "${genomesizedir}/genomescope"

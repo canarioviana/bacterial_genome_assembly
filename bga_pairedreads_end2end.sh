@@ -806,7 +806,7 @@ for r1 in "${r1_files[@]}"; do
     # Delete the original trimmed reads after confirming rasusa actually produced valid output
     if [ -f "3_fastp_downsampling/${output_r1}" ] && [ -f "3_fastp_downsampling/${output_r2}" ] \
         && gzip -t "3_fastp_downsampling/${output_r1}" 2>/dev/null && gzip -t "3_fastp_downsampling/${output_r2}" 2>/dev/null; then
-        : # rm "${r1}" "${r2}"   (trimmed reads are kept)
+        # rm "${r1}" "${r2}"
     else
         echo "✗  ERROR: Rasusa did not produce valid output for sample ${sample}. Aborting without deleting original trimmed reads." | tee -a 0_workflow_progress.txt
         exit 1
@@ -2193,15 +2193,15 @@ echo "▶▶▶  ${workflow_step} started @ $(date +'%Y-%m-%d %H:%M:%S') ▶▶�
 start_time=$SECONDS
 
 # Skip if this step already completed successfully (final archive present and valid)
+# MOB-suite results are archived only in 9_mobsuite.tar.gz (step 9)
 if [ -f "10_assemblies_for_analysis.zip" ] && [ -f "10_assemblies_for_analysis.zip.md5" ] \
-    && [ -f "9_mobsuite.zip" ] && [ -f "9_mobsuite.zip.md5" ] \
-    && md5sum -c "10_assemblies_for_analysis.zip.md5" >/dev/null 2>&1 \
-    && md5sum -c "9_mobsuite.zip.md5" >/dev/null 2>&1; then
-    echo "✔  ${workflow_step} already completed successfully (both archives verified). Skipping step." | tee -a 0_workflow_progress.txt
+    && md5sum -c "10_assemblies_for_analysis.zip.md5" >/dev/null 2>&1; then
+    echo "✔  ${workflow_step} already completed successfully (10_assemblies_for_analysis.zip verified). Skipping step." | tee -a 0_workflow_progress.txt
 else
     # Delete incomplete output
     rm -rf 10_assemblies_for_analysis
     rm -f 10_assemblies_for_analysis.zip 10_assemblies_for_analysis.zip.md5
+    # Remove legacy redundant archive created by older versions of this script
     rm -f 9_mobsuite.zip 9_mobsuite.zip.md5
 
     # Check the MOB-suite directory
@@ -2281,19 +2281,15 @@ else
         echo "✗  ERROR: 10_assemblies_for_analysis.zip: integrity check failed" | tee -a 0_workflow_progress.txt
         exit 1
     fi
-    if ! zip -r 9_mobsuite.zip 9_mobsuite; then
-        echo "✗  ERROR: ${workflow_step}: FAILED to create 9_mobsuite.zip" | tee -a 0_workflow_progress.txt
-        exit 1
-    fi
-    md5sum 9_mobsuite.zip > 9_mobsuite.zip.md5
-    if ! md5sum -c 9_mobsuite.zip.md5 | tee -a 0_workflow_progress.txt; then
-        echo "✗  ERROR: 9_mobsuite.zip: integrity check failed" | tee -a 0_workflow_progress.txt
-        exit 1
-    fi
-
     # Only delete temporary data
     rm -r 10_assemblies_for_analysis
-    rm -r 9_mobsuite
+    # Delete the MOB-suite directory only if its step 9 archive is present and valid
+    if [ -f "9_mobsuite.tar.gz" ] && [ -f "9_mobsuite.tar.gz.md5" ] \
+        && md5sum -c "9_mobsuite.tar.gz.md5" >/dev/null 2>&1; then
+        rm -r 9_mobsuite
+    else
+        echo "⚠  WARNING: ${workflow_step}: 9_mobsuite.tar.gz missing or invalid; keeping 9_mobsuite/ directory." | tee -a 0_workflow_progress.txt
+    fi
 fi
 
 # Stop counting the running time

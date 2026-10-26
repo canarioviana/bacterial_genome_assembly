@@ -58,6 +58,7 @@
 ## 9) Plasmid identification
     # MOB-suite 
 ## 10) Assignment of contigs to molecules
+## 11) Assembly report
 
 
 ############################################################
@@ -2344,7 +2345,7 @@ echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') —
 
 
 ############################################################
-## 11) Report
+## 11) Assembly report
 ############################################################
 
 ############################################################
@@ -2460,8 +2461,16 @@ else
         exit 1
     fi
 
-    # Sample list (and order) from CheckM2, which includes every assembled genome
-    tail -n +2 11_report_tmp/2_checkm2.tsv | cut -f1 > 11_report_tmp/0_samples.txt
+    # Sample list from 3_genomesize.tsv, which includes every sample that reached step 3,
+    # even those not assembled because GenomeScope failed (size "NA")
+    cut -f1 3_genomesize.tsv | tr -d '\r' | awk 'NF' | LC_ALL=C sort -u > 11_report_tmp/0_samples.txt
+    # Safety check: add any assembled genome missing from 3_genomesize.tsv
+    missing=$(tail -n +2 11_report_tmp/2_checkm2.tsv | cut -f1 | LC_ALL=C sort -u | LC_ALL=C comm -13 11_report_tmp/0_samples.txt -)
+    if [ -n "$missing" ]; then
+        echo "⚠  WARNING: ${workflow_step}: sample(s) in 7_checkm2.tsv but not in 3_genomesize.tsv: $(echo $missing)" | tee -a 0_workflow_progress.txt
+        printf '%s\n' $missing >> 11_report_tmp/0_samples.txt
+        LC_ALL=C sort -u -o 11_report_tmp/0_samples.txt 11_report_tmp/0_samples.txt
+    fi
 
     # Genome size estimated by GenomeScope (3_genomesize.tsv has no header: sample, size in bp)
     # If a sample appears more than once (e.g. after a restart), the last line is kept
@@ -2496,7 +2505,7 @@ else
         mob_input="/dev/null"
     fi
     awk -F'\t' -v OFS='\t' '
-        # First file: sample list (and order) from CheckM2 (no header)
+        # First file: sample list (and order) from 3_genomesize.tsv (no header)
         FILENAME == ARGV[1] { if ($1 != "") order[++n] = $1; next }
         # Second file: genomes that passed CheckM2 (one name per line, no header)
         FILENAME == ARGV[2] { sub(/\r$/, ""); if ($1 != "") passed[$1] = 1; next }
@@ -2518,10 +2527,10 @@ else
     ' 11_report_tmp/0_samples.txt 7_checkm2_passed.txt "$mob_input" > 11_report_tmp/6_mobsuite.tsv
 
     # Merge the tables by sample name
-    # Samples absent from a table (e.g. genomes that failed the CheckM2 filter) receive "NA"
+    # Samples absent from a table (e.g. not assembled, or failed the CheckM2 filter) receive "NA"
     echo "${workflow_step}: Merging tables into ${output_file}" | tee -a 0_workflow_progress.txt
     awk -F'\t' -v OFS='\t' '
-        # First file: sample list (and order) from CheckM2 (no header)
+        # First file: sample list (and order) from 3_genomesize.tsv (no header)
         FILENAME == ARGV[1] { if ($1 != "" && !($1 in in_order)) { order[++n] = $1; in_order[$1] = 1 }; next }
         # Remaining files: per-tool tables (header + one line per sample), in report column order
         FNR == 1 {
@@ -2571,20 +2580,6 @@ else
         exit 1
     fi
 fi
-
-# Stop counting the running time
-elapsed_time=$((SECONDS - $start_time))
-# Calculate the running time
-hours=$((elapsed_time / 3600))
-minutes=$(((elapsed_time % 3600) / 60))
-seconds=$((elapsed_time % 60))
-running_time=$(printf "%02d:%02d:%02d" "$hours" "$minutes" "$seconds")
-# Update the file 0_workflow_progress.txt
-echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') — Total: ${running_time} ■■■\n" | tee -a 0_workflow_progress.txt
-
-echo -e "════════════════════════════════════════════════════════
-WORKFLOW FINISHED @ $(date +'%Y-%m-%d %H:%M:%S')
-════════════════════════════════════════════════════════\n" | tee -a 0_workflow_progress.txt
 
 
 ############################################################

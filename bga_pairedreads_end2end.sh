@@ -2345,7 +2345,7 @@ echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') —
 
 
 ############################################################
-## 11) Assembly report
+## 11) Report
 ############################################################
 
 ############################################################
@@ -2580,6 +2580,20 @@ else
         exit 1
     fi
 fi
+
+# Stop counting the running time
+elapsed_time=$((SECONDS - $start_time))
+# Calculate the running time
+hours=$((elapsed_time / 3600))
+minutes=$(((elapsed_time % 3600) / 60))
+seconds=$((elapsed_time % 60))
+running_time=$(printf "%02d:%02d:%02d" "$hours" "$minutes" "$seconds")
+# Update the file 0_workflow_progress.txt
+echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') — Total: ${running_time} ■■■\n" | tee -a 0_workflow_progress.txt
+
+echo -e "════════════════════════════════════════════════════════
+WORKFLOW FINISHED @ $(date +'%Y-%m-%d %H:%M:%S')
+════════════════════════════════════════════════════════\n" | tee -a 0_workflow_progress.txt
 
 
 ############################################################

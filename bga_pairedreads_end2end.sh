@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 21/10/2026
+# Date: 23/10/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -2054,12 +2054,31 @@ else
     # Create output directory
     mkdir -p 9_mobsuite
 
-    # Calculate sample size
+    # Ensure 7_checkm2_passed.txt is present
+    if [ ! -f "7_checkm2_passed.txt" ]; then
+        echo "${workflow_step}: 7_checkm2_passed.txt not found — attempting to extract it from 7_checkm2.tar.gz" | tee -a 0_workflow_progress.txt
+        if [ -f "7_checkm2.tar.gz" ]; then
+            tar -xzf 7_checkm2.tar.gz 7_checkm2_passed.txt
+        fi
+        if [ ! -f "7_checkm2_passed.txt" ]; then
+            echo "✗  ERROR: ${workflow_step}: 7_checkm2_passed.txt could not be found or recovered. Run CheckM2 first." | tee -a 0_workflow_progress.txt
+            exit 1
+        fi
+    fi
+
+    # Build the sample list from genomes that passed CheckM2
     i=1
-    files=(6_assemblies/*.fasta)
+    files=()
+    for file in 6_assemblies/*.fasta; do
+        [ -f "$file" ] || continue
+        sample=$(basename "$file" .fasta)
+        if grep -qxF "$sample" 7_checkm2_passed.txt; then
+            files+=("$file")
+        fi
+    done
     sample_count=${#files[@]}
     if [ "$sample_count" -eq 0 ]; then
-        echo "✗  ERROR: ${workflow_step}: No input found matching 6_assemblies/*.fasta" | tee -a 0_workflow_progress.txt
+        echo "✗  ERROR: ${workflow_step}: No genomes passed the CheckM2 quality filter." | tee -a 0_workflow_progress.txt
         exit 1
     fi
 
@@ -2190,17 +2209,15 @@ echo "▶▶▶  ${workflow_step} started @ $(date +'%Y-%m-%d %H:%M:%S') ▶▶�
 # Start counting the running time
 start_time=$SECONDS
 
+# Inform the output file
+compressed_file="10_assemblies_for_analysis.tar.gz"
 # Skip if this step already completed successfully (final archive present and valid)
-# MOB-suite results are archived only in 9_mobsuite.tar.gz (step 9)
-if [ -f "10_assemblies_for_analysis.zip" ] && [ -f "10_assemblies_for_analysis.zip.md5" ] \
-    && md5sum -c "10_assemblies_for_analysis.zip.md5" >/dev/null 2>&1; then
-    echo "✔  ${workflow_step} already completed successfully (10_assemblies_for_analysis.zip verified). Skipping step." | tee -a 0_workflow_progress.txt
+if [ -f "$compressed_file" ] && [ -f "${compressed_file}.md5" ] && md5sum -c "${compressed_file}.md5" >/dev/null 2>&1; then
+    echo "✔  ${workflow_step} already completed successfully (${compressed_file} verified). Skipping step." | tee -a 0_workflow_progress.txt
 else
     # Delete incomplete output
     rm -rf 10_assemblies_for_analysis
-    rm -f 10_assemblies_for_analysis.zip 10_assemblies_for_analysis.zip.md5
-    # Remove legacy redundant archive created by older versions of this script
-    rm -f 9_mobsuite.zip 9_mobsuite.zip.md5
+    rm -f "${compressed_file}" "${compressed_file}.md5"
 
     # Check the MOB-suite directory
     if [ ! -d "9_mobsuite" ]; then
@@ -2214,9 +2231,27 @@ else
         fi
     fi
 
-    # Copy and rename fasta files
-    cp -r 6_assemblies 10_assemblies_for_analysis
-    rename "s/.fasta$/.fsa/" 10_assemblies_for_analysis/*.fasta
+    # Ensure 7_checkm2_passed.txt is present
+    if [ ! -f "7_checkm2_passed.txt" ]; then
+        echo "${workflow_step}: 7_checkm2_passed.txt not found — attempting to extract it from 7_checkm2.tar.gz" | tee -a 0_workflow_progress.txt
+        if [ -f "7_checkm2.tar.gz" ]; then
+            tar -xzf 7_checkm2.tar.gz 7_checkm2_passed.txt
+        fi
+        if [ ! -f "7_checkm2_passed.txt" ]; then
+            echo "✗  ERROR: ${workflow_step}: 7_checkm2_passed.txt could not be found or recovered. Run CheckM2 first." | tee -a 0_workflow_progress.txt
+            exit 1
+        fi
+    fi
+
+    # Copy only genomes that passed CheckM2, renaming them to .fsa
+    mkdir -p 10_assemblies_for_analysis
+    for file in 6_assemblies/*.fasta; do
+        [ -f "$file" ] || continue
+        sample=$(basename "$file" .fasta)
+        if grep -qxF "$sample" 7_checkm2_passed.txt; then
+            cp "$file" "10_assemblies_for_analysis/${sample}.fsa"
+        fi
+    done
 
     # Calculate sample size
     i=1
@@ -2269,17 +2304,22 @@ else
         i=$((i + 1))
     done
 
-    # Check the output
-    if ! zip -r 10_assemblies_for_analysis.zip 10_assemblies_for_analysis; then
-        echo "✗  ERROR: ${workflow_step}: FAILED to create 10_assemblies_for_analysis.zip" | tee -a 0_workflow_progress.txt
+    # Compress the output directory
+    itens_to_compress=(10_assemblies_for_analysis)
+    echo "${workflow_step}: Compressing output directory" | tee -a 0_workflow_progress.txt
+    if ! tar -c --use-compress-program=pigz -f "${compressed_file}" "${itens_to_compress[@]}"; then
+        echo "✗  ERROR: ${compressed_file}: FAILED to create archive" | tee -a 0_workflow_progress.txt
         exit 1
     fi
-    md5sum 10_assemblies_for_analysis.zip > 10_assemblies_for_analysis.zip.md5
-    if ! md5sum -c 10_assemblies_for_analysis.zip.md5 | tee -a 0_workflow_progress.txt; then
-        echo "✗  ERROR: 10_assemblies_for_analysis.zip: integrity check failed" | tee -a 0_workflow_progress.txt
+    # Generate checksum file of compressed directory file
+    md5sum "${compressed_file}" > "${compressed_file}".md5
+    # Check file integrity
+    echo "${workflow_step}: Checking file integrity" | tee -a 0_workflow_progress.txt
+    if ! md5sum -c "${compressed_file}".md5 | tee -a 0_workflow_progress.txt; then
+        echo "✗  ERROR: ${compressed_file}: integrity check failed" | tee -a 0_workflow_progress.txt
         exit 1
     fi
-    # Only delete temporary data
+    # Delete temporary data after the archive is verified valid
     rm -r 10_assemblies_for_analysis
     # Delete the MOB-suite directory only if its step 9 archive is present and valid
     if [ -f "9_mobsuite.tar.gz" ] && [ -f "9_mobsuite.tar.gz.md5" ] \
@@ -2301,6 +2341,228 @@ running_time=$(printf "%02d:%02d:%02d" "$hours" "$minutes" "$seconds")
 echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') — Total: ${running_time} ■■■\n" | tee -a 0_workflow_progress.txt
 
 # In case of a novel plasmid, you will have to change its temporary name given by MOB-suite to an appropriate and shorter name.
+
+
+############################################################
+## 11) Report
+############################################################
+
+############################################################
+## 11.1) Summary table (CheckM2, GUNC, QUAST, coverage, GTDB-Tk and MOB-suite)
+
+# Avoid literal glob pattern
+shopt -s nullglob
+
+# Software name for tracking progress in 0_workflow_progress.txt
+workflow_step="11) Report"
+# Update the file 0_workflow_progress.txt
+echo "▶▶▶  ${workflow_step} started @ $(date +'%Y-%m-%d %H:%M:%S') ▶▶▶" | tee -a 0_workflow_progress.txt
+# Start counting the running time
+start_time=$SECONDS
+
+# Function to extract selected columns (by header name) from a TSV file.
+extract_columns() {
+    local input_file="$1"; shift
+    local sample_col="$1"; shift
+    local cols
+    cols=$(IFS=$'\t'; echo "$*")
+    awk -F'\t' -v OFS='\t' -v sample_col="$sample_col" -v cols="$cols" '
+        NR == 1 {
+            # Strip Windows CR, if any
+            sub(/\r$/, "")
+            for (j = 1; j <= NF; j++) idx[$j] = j
+            if (!(sample_col in idx)) {
+                print "✗  ERROR: column \"" sample_col "\" not found in " FILENAME > "/dev/stderr"
+                exit 1
+            }
+            n = split(cols, wanted, "\t")
+            for (k = 1; k <= n; k++) {
+                if (!(wanted[k] in idx)) {
+                    print "✗  ERROR: column \"" wanted[k] "\" not found in " FILENAME > "/dev/stderr"
+                    exit 1
+                }
+            }
+            line = "Sample"
+            for (k = 1; k <= n; k++) line = line OFS wanted[k]
+            print line
+            next
+        }
+        {
+            sub(/\r$/, "")
+            # Skip blank lines
+            if ($0 == "") next
+            line = $(idx[sample_col])
+            for (k = 1; k <= n; k++) line = line OFS $(idx[wanted[k]])
+            print line
+        }
+    ' "$input_file"
+}
+
+# Function to check if a TSV file has a given column in its header
+has_column() {
+    head -n 1 "$1" | tr -d '\r' | tr '\t' '\n' | grep -qxF "$2"
+}
+
+# Inform the output file
+output_file="11_assembly_report.tsv"
+
+# Skip if this step already completed successfully (final report present and valid)
+if [ -f "$output_file" ] && [ -f "${output_file}.md5" ] && md5sum -c "${output_file}.md5" >/dev/null 2>&1; then
+    echo "✔  ${workflow_step} already completed successfully (${output_file} verified). Skipping step." | tee -a 0_workflow_progress.txt
+else
+    # Delete incomplete output from a previous interrupted run
+    rm -rf 11_report_tmp
+    rm -f "$output_file" "${output_file}.md5"
+
+    # Ensure the input tables are present (recover them from the step archives if needed)
+    for map in "7_checkm2.tsv:7_checkm2.tar.gz" \
+               "7_checkm2_passed.txt:7_checkm2.tar.gz" \
+               "7_gunc.tsv:7_gunc.tar.gz" \
+               "7_quast.tsv:7_quast.tar.gz" \
+               "7_coverage.tsv:" \
+               "8_gtdbtk.tsv:8_gtdbtk.tar.gz" ; do
+        table="${map%%:*}"
+        archive="${map#*:}"
+        if [ ! -s "$table" ] && [ -n "$archive" ] && [ -f "$archive" ]; then
+            echo "${workflow_step}: ${table} not found — attempting to extract it from ${archive}" | tee -a 0_workflow_progress.txt
+            tar -xzf "$archive" "$table"
+        fi
+        if [ ! -s "$table" ]; then
+            echo "✗  ERROR: ${workflow_step}: ${table} could not be found or recovered. Check that the previous steps completed successfully." | tee -a 0_workflow_progress.txt
+            exit 1
+        fi
+    done
+
+    # GTDB-Tk < 2.4 names the ANI columns fastani_reference and fastani_ani
+    if has_column 8_gtdbtk.tsv "closest_genome_reference"; then
+        gtdbtk_ref_col="closest_genome_reference"
+        gtdbtk_ani_col="closest_genome_ani"
+    else
+        echo "${workflow_step}: closest_genome_* columns not found in 8_gtdbtk.tsv — using fastani_* columns (older GTDB-Tk)" | tee -a 0_workflow_progress.txt
+        gtdbtk_ref_col="fastani_reference"
+        gtdbtk_ani_col="fastani_ani"
+    fi
+
+    # Create temporary directory
+    mkdir -p 11_report_tmp
+
+    # Extract the selected columns of each table (CheckM2 first: it defines the sample list and order)
+    echo "${workflow_step}: Extracting columns from the output tables" | tee -a 0_workflow_progress.txt
+    if ! extract_columns 7_checkm2.tsv "Name" "Completeness" "Contamination" > 11_report_tmp/1_checkm2.tsv \
+        || ! extract_columns 7_gunc.tsv "genome" "clade_separation_score" "pass.GUNC" > 11_report_tmp/2_gunc.tsv \
+        || ! extract_columns 7_quast.tsv "Assembly" "# contigs" "Largest contig" "Total length" "GC (%)" "N50" > 11_report_tmp/3_quast.tsv \
+        || ! extract_columns 7_coverage.tsv "Sample" "Coverage" > 11_report_tmp/4_coverage.tsv \
+        || ! extract_columns 8_gtdbtk.tsv "user_genome" "classification" "$gtdbtk_ref_col" "$gtdbtk_ani_col" > 11_report_tmp/5_gtdbtk.tsv; then
+        echo "✗  ERROR: ${workflow_step}: Failed to extract columns from the output tables." | tee -a 0_workflow_progress.txt
+        exit 1
+    fi
+
+    # Count plasmids per sample from MOB-suite (one line per plasmid; first column is "sample:plasmid")
+    # MOB-suite runs only on genomes that passed CheckM2: those without plasmids receive 0,
+    # and genomes that failed CheckM2 (absent from 7_checkm2_passed.txt) receive NA
+    mob_table="9_mobsuite_mobtyper_results_all.tsv"
+    if [ ! -f "$mob_table" ]; then
+        if [ ! -f "9_mobsuite.tar.gz" ]; then
+            echo "✗  ERROR: ${workflow_step}: ${mob_table} and 9_mobsuite.tar.gz not found. Check that step 9 completed successfully." | tee -a 0_workflow_progress.txt
+            exit 1
+        fi
+        echo "${workflow_step}: ${mob_table} not found — attempting to extract it from 9_mobsuite.tar.gz" | tee -a 0_workflow_progress.txt
+        # The table is absent from the archive when no plasmid was found in any sample
+        tar -xzf 9_mobsuite.tar.gz "$mob_table" 2>/dev/null || true
+    fi
+    if [ -f "$mob_table" ]; then
+        mob_input="$mob_table"
+    else
+        echo "⚠  WARNING: ${workflow_step}: ${mob_table} not found in 9_mobsuite.tar.gz — assuming no plasmids in any genome that passed CheckM2." | tee -a 0_workflow_progress.txt
+        mob_input="/dev/null"
+    fi
+    awk -F'\t' -v OFS='\t' '
+        # First file: sample list (and order) from CheckM2
+        FILENAME == ARGV[1] { if (FNR > 1) order[++n] = $1; next }
+        # Second file: genomes that passed CheckM2 (one name per line, no header)
+        FILENAME == ARGV[2] { sub(/\r$/, ""); if ($1 != "") passed[$1] = 1; next }
+        # Third file: MOB-typer results (skip header and blank lines)
+        FNR == 1 { next }
+        {
+            sub(/\r$/, "")
+            if ($0 == "") next
+            split($1, id, ":")
+            count[id[1]]++
+        }
+        END {
+            print "Sample", "n_plasmids"
+            for (i = 1; i <= n; i++) {
+                s = order[i]
+                print s, ((s in passed) ? count[s] + 0 : "NA")
+            }
+        }
+    ' 11_report_tmp/1_checkm2.tsv 7_checkm2_passed.txt "$mob_input" > 11_report_tmp/6_mobsuite.tsv
+
+    # Merge the tables by sample name
+    # Samples absent from a table (e.g. genomes that failed the CheckM2 filter) receive "NA"
+    echo "${workflow_step}: Merging tables into ${output_file}" | tee -a 0_workflow_progress.txt
+    awk -F'\t' -v OFS='\t' '
+        FNR == 1 {
+            f++
+            ncol[f] = NF
+            for (j = 2; j <= NF; j++) hdr[f, j] = $j
+            next
+        }
+        {
+            if (f == 1 && !($1 in in_order)) { order[++n] = $1; in_order[$1] = 1 }
+            for (j = 2; j <= NF; j++) val[f, $1, j] = $j
+        }
+        END {
+            line = "Sample"
+            for (k = 1; k <= f; k++) for (j = 2; j <= ncol[k]; j++) line = line OFS hdr[k, j]
+            print line
+            for (i = 1; i <= n; i++) {
+                s = order[i]
+                line = s
+                for (k = 1; k <= f; k++) {
+                    for (j = 2; j <= ncol[k]; j++) {
+                        line = line OFS (((k, s, j) in val) ? val[k, s, j] : "NA")
+                    }
+                }
+                print line
+            }
+        }
+    ' 11_report_tmp/1_checkm2.tsv 11_report_tmp/2_gunc.tsv 11_report_tmp/3_quast.tsv \
+      11_report_tmp/4_coverage.tsv 11_report_tmp/5_gtdbtk.tsv 11_report_tmp/6_mobsuite.tsv > "$output_file"
+
+    # Check the output file (header + at least one sample)
+    if [ "$(wc -l < "$output_file")" -lt 2 ]; then
+        echo "✗  ERROR: ${workflow_step}: ${output_file} is empty or has no samples." | tee -a 0_workflow_progress.txt
+        exit 1
+    fi
+    echo "${workflow_step}: ${output_file} has $(( $(wc -l < "$output_file") - 1 )) sample(s)" | tee -a 0_workflow_progress.txt
+
+    # Delete temporary data
+    rm -r 11_report_tmp
+
+    # Generate checksum file and check file integrity
+    md5sum "${output_file}" > "${output_file}".md5
+    echo "${workflow_step}: Checking file integrity" | tee -a 0_workflow_progress.txt
+    if ! md5sum -c "${output_file}".md5 | tee -a 0_workflow_progress.txt; then
+        echo "✗  ERROR: ${output_file}: integrity check failed" | tee -a 0_workflow_progress.txt
+        exit 1
+    fi
+fi
+
+# Stop counting the running time
+elapsed_time=$((SECONDS - $start_time))
+# Calculate the running time
+hours=$((elapsed_time / 3600))
+minutes=$(((elapsed_time % 3600) / 60))
+seconds=$((elapsed_time % 60))
+running_time=$(printf "%02d:%02d:%02d" "$hours" "$minutes" "$seconds")
+# Update the file 0_workflow_progress.txt
+echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') — Total: ${running_time} ■■■\n" | tee -a 0_workflow_progress.txt
+
+echo -e "════════════════════════════════════════════════════════
+WORKFLOW FINISHED @ $(date +'%Y-%m-%d %H:%M:%S')
+════════════════════════════════════════════════════════\n" | tee -a 0_workflow_progress.txt
+
 
 ############################################################
 ## Genome submission to GenBank

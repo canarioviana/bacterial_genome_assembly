@@ -2,7 +2,7 @@
 # Bash script for bacterial genome assembly from short-read sequencing data (end-to-end worflow)
 #
 # Author: Marcus Vinicius Canário Viana
-# Date: 23/10/2026
+# Date: 26/10/2026
 # Repository: https://github.com/canarioviana/bacterial_genome_assembly
 # More info: see README.md in the repository
 #
@@ -2348,7 +2348,7 @@ echo -e "■■■  ${workflow_step} finished @ $(date +'%Y-%m-%d %H:%M:%S') —
 ############################################################
 
 ############################################################
-## 11.1) Summary table (CheckM2, GUNC, QUAST, coverage, GTDB-Tk and MOB-suite)
+## 11.1) Summary table (CheckM2, GUNC, GenomeScope, QUAST, coverage, GTDB-Tk and MOB-suite)
 
 # Avoid literal glob pattern
 shopt -s nullglob
@@ -2361,6 +2361,8 @@ echo "▶▶▶  ${workflow_step} started @ $(date +'%Y-%m-%d %H:%M:%S') ▶▶�
 start_time=$SECONDS
 
 # Function to extract selected columns (by header name) from a TSV file.
+# Usage: extract_columns <input_file> <sample_column> <column_1> [column_2 ...]
+# Output: TSV with the sample column first, followed by the requested columns.
 extract_columns() {
     local input_file="$1"; shift
     local sample_col="$1"; shift
@@ -2417,6 +2419,7 @@ else
     # Ensure the input tables are present (recover them from the step archives if needed)
     for map in "7_checkm2.tsv:7_checkm2.tar.gz" \
                "7_checkm2_passed.txt:7_checkm2.tar.gz" \
+               "3_genomesize.tsv:3_fastp_downsampling.tar.gz" \
                "7_gunc.tsv:7_gunc.tar.gz" \
                "7_quast.tsv:7_quast.tar.gz" \
                "7_coverage.tsv:" \
@@ -2446,16 +2449,32 @@ else
     # Create temporary directory
     mkdir -p 11_report_tmp
 
-    # Extract the selected columns of each table (CheckM2 first: it defines the sample list and order)
+    # Extract the selected columns of each table (temporary files are numbered in report column order)
     echo "${workflow_step}: Extracting columns from the output tables" | tee -a 0_workflow_progress.txt
-    if ! extract_columns 7_checkm2.tsv "Name" "Completeness" "Contamination" > 11_report_tmp/1_checkm2.tsv \
-        || ! extract_columns 7_gunc.tsv "genome" "clade_separation_score" "pass.GUNC" > 11_report_tmp/2_gunc.tsv \
-        || ! extract_columns 7_quast.tsv "Assembly" "# contigs" "Largest contig" "Total length" "GC (%)" "N50" > 11_report_tmp/3_quast.tsv \
-        || ! extract_columns 7_coverage.tsv "Sample" "Coverage" > 11_report_tmp/4_coverage.tsv \
-        || ! extract_columns 8_gtdbtk.tsv "user_genome" "classification" "$gtdbtk_ref_col" "$gtdbtk_ani_col" > 11_report_tmp/5_gtdbtk.tsv; then
+    if ! extract_columns 7_checkm2.tsv "Name" "Completeness" "Contamination" > 11_report_tmp/2_checkm2.tsv \
+        || ! extract_columns 7_gunc.tsv "genome" "clade_separation_score" "pass.GUNC" > 11_report_tmp/3_gunc.tsv \
+        || ! extract_columns 7_quast.tsv "Assembly" "# contigs" "Total length" "GC (%)" "N50" > 11_report_tmp/4_quast.tsv \
+        || ! extract_columns 7_coverage.tsv "Sample" "Coverage" > 11_report_tmp/5_coverage.tsv \
+        || ! extract_columns 8_gtdbtk.tsv "user_genome" "classification" "$gtdbtk_ref_col" "$gtdbtk_ani_col" > 11_report_tmp/7_gtdbtk.tsv; then
         echo "✗  ERROR: ${workflow_step}: Failed to extract columns from the output tables." | tee -a 0_workflow_progress.txt
         exit 1
     fi
+
+    # Sample list (and order) from CheckM2, which includes every assembled genome
+    tail -n +2 11_report_tmp/2_checkm2.tsv | cut -f1 > 11_report_tmp/0_samples.txt
+
+    # Genome size estimated by GenomeScope (3_genomesize.tsv has no header: sample, size in bp)
+    # If a sample appears more than once (e.g. after a restart), the last line is kept
+    awk -F'\t' -v OFS='\t' '
+        BEGIN { print "Sample", "estimated_size" }
+        {
+            sub(/\r$/, "")
+            if ($1 == "") next
+            if (!($1 in size)) order[++n] = $1
+            size[$1] = $2
+        }
+        END { for (i = 1; i <= n; i++) print order[i], size[order[i]] }
+    ' 3_genomesize.tsv > 11_report_tmp/1_genomesize.tsv
 
     # Count plasmids per sample from MOB-suite (one line per plasmid; first column is "sample:plasmid")
     # MOB-suite runs only on genomes that passed CheckM2: those without plasmids receive 0,
@@ -2477,8 +2496,8 @@ else
         mob_input="/dev/null"
     fi
     awk -F'\t' -v OFS='\t' '
-        # First file: sample list (and order) from CheckM2
-        FILENAME == ARGV[1] { if (FNR > 1) order[++n] = $1; next }
+        # First file: sample list (and order) from CheckM2 (no header)
+        FILENAME == ARGV[1] { if ($1 != "") order[++n] = $1; next }
         # Second file: genomes that passed CheckM2 (one name per line, no header)
         FILENAME == ARGV[2] { sub(/\r$/, ""); if ($1 != "") passed[$1] = 1; next }
         # Third file: MOB-typer results (skip header and blank lines)
@@ -2496,12 +2515,15 @@ else
                 print s, ((s in passed) ? count[s] + 0 : "NA")
             }
         }
-    ' 11_report_tmp/1_checkm2.tsv 7_checkm2_passed.txt "$mob_input" > 11_report_tmp/6_mobsuite.tsv
+    ' 11_report_tmp/0_samples.txt 7_checkm2_passed.txt "$mob_input" > 11_report_tmp/6_mobsuite.tsv
 
     # Merge the tables by sample name
     # Samples absent from a table (e.g. genomes that failed the CheckM2 filter) receive "NA"
     echo "${workflow_step}: Merging tables into ${output_file}" | tee -a 0_workflow_progress.txt
     awk -F'\t' -v OFS='\t' '
+        # First file: sample list (and order) from CheckM2 (no header)
+        FILENAME == ARGV[1] { if ($1 != "" && !($1 in in_order)) { order[++n] = $1; in_order[$1] = 1 }; next }
+        # Remaining files: per-tool tables (header + one line per sample), in report column order
         FNR == 1 {
             f++
             ncol[f] = NF
@@ -2509,7 +2531,6 @@ else
             next
         }
         {
-            if (f == 1 && !($1 in in_order)) { order[++n] = $1; in_order[$1] = 1 }
             for (j = 2; j <= NF; j++) val[f, $1, j] = $j
         }
         END {
@@ -2527,8 +2548,10 @@ else
                 print line
             }
         }
-    ' 11_report_tmp/1_checkm2.tsv 11_report_tmp/2_gunc.tsv 11_report_tmp/3_quast.tsv \
-      11_report_tmp/4_coverage.tsv 11_report_tmp/5_gtdbtk.tsv 11_report_tmp/6_mobsuite.tsv > "$output_file"
+    ' 11_report_tmp/0_samples.txt \
+      11_report_tmp/1_genomesize.tsv 11_report_tmp/2_checkm2.tsv 11_report_tmp/3_gunc.tsv \
+      11_report_tmp/4_quast.tsv 11_report_tmp/5_coverage.tsv 11_report_tmp/6_mobsuite.tsv \
+      11_report_tmp/7_gtdbtk.tsv > "$output_file"
 
     # Check the output file (header + at least one sample)
     if [ "$(wc -l < "$output_file")" -lt 2 ]; then

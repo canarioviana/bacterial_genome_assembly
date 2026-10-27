@@ -1928,9 +1928,17 @@ else
 
     # Activate conda environment
     conda activate gtdbtk
+    # Threads available (leave one free for the system)
+    ncpu=$(nproc --ignore=1)
+    # pplacer memory grows with its thread count: use half of the
+    # available threads, at least 1 and at most 12
+    pplacer_cpus=$(( ncpu / 2 ))
+    (( pplacer_cpus < 1 ))  && pplacer_cpus=1
+    (( pplacer_cpus > 12 )) && pplacer_cpus=12
+    # Run software
     gtdbtk classify_wf \
-        --cpus $(nproc --ignore=1) \
-        --pplacer_cpus 12 \
+        --cpus "$ncpu" \
+        --pplacer_cpus "$pplacer_cpus" \
         --scratch_dir "$scratch_dir" \
         --batchfile "$batchfile" \
         --out_dir "8_gtdbtk"
